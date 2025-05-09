@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(fontSize: 20, color: Color(0xFF626F47)),
                     children: [
                       TextSpan(
-                        text: 'MASUK\n',
+                        text: 'MASUK DISINI\n',
                         style: TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
