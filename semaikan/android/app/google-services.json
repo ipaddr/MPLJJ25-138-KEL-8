@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "358326743764",
+    "project_id": "kel8-semaikan",
+    "storage_bucket": "kel8-semaikan.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:358326743764:android:c733348445c144cdd10141",
+        "android_client_info": {
+          "package_name": "com.example.semaikan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIailyHxWl292MF1xTGPNJTSA25-gdSY4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
