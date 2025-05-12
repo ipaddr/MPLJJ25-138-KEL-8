@@ -12,7 +12,8 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
   final _formKey = GlobalKey<FormState>(); // GlobalKey untuk validasi form
   final TextEditingController _namaSekolahController = TextEditingController();
   final TextEditingController _npsnController = TextEditingController();
-  final TextEditingController _alamatSekolahController = TextEditingController();
+  final TextEditingController _alamatSekolahController =
+      TextEditingController();
   final TextEditingController _emailSekolahController = TextEditingController();
   final TextEditingController _kataSandiController = TextEditingController();
 
@@ -24,7 +25,7 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Form(
-            key: _formKey,  // Menambahkan Form dengan key untuk validasi
+            key: _formKey, // Menambahkan Form dengan key untuk validasi
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -34,10 +35,7 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
                 RichText(
                   textAlign: TextAlign.center,
                   text: const TextSpan(
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Color(0xFF626F47),
-                    ),
+                    style: TextStyle(fontSize: 20, color: Color(0xFF626F47)),
                     children: [
                       TextSpan(
                         text: 'DAFTAR SEKOLAH/PESANTREN\n',
@@ -49,8 +47,9 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 30), // Menambah jarak antara teks dan input field
-
+                const SizedBox(
+                  height: 30,
+                ), // Menambah jarak antara teks dan input field
                 // Input fields
                 _buildTextField('Nama Sekolah', _namaSekolahController),
                 const SizedBox(height: 15),
@@ -60,10 +59,15 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
                 const SizedBox(height: 15),
                 _buildTextField('Email Sekolah', _emailSekolahController),
                 const SizedBox(height: 15),
-                _buildTextField('Kata Sandi', _kataSandiController, isPassword: true),
+                _buildTextField(
+                  'Kata Sandi',
+                  _kataSandiController,
+                  isPassword: true,
+                ),
 
-                const SizedBox(height: 30), // Menambah jarak antara input field dan tombol
-
+                const SizedBox(
+                  height: 30,
+                ), // Menambah jarak antara input field dan tombol
                 // Tombol Daftar
                 ElevatedButton(
                   onPressed: () {
@@ -71,20 +75,27 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
                       // Jika form valid, lakukan navigasi ke LoginScreen setelah pendaftaran
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),  // Arahkan ke halaman Login
+                        MaterialPageRoute(
+                          builder: (context) => const LoginScreen(),
+                        ), // Arahkan ke halaman Login
                       );
                     }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8F8962),
-                    padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 50),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 15,
+                      horizontal: 50,
+                    ),
                   ),
                   child: const Text(
                     'DAFTAR',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFFF9F3D1),  // Warna teks sesuai dengan warna background tombol
+                      color: Color(
+                        0xFFF9F3D1,
+                      ), // Warna teks sesuai dengan warna background tombol
                     ),
                   ),
                 ),
@@ -95,17 +106,16 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
                   onPressed: () {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
                     );
                   },
                   child: const Text(
                     'Sudah Punya Akun? Masuk',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF626F47),
-                      ),
-                      ),
-                      ),
+                    style: TextStyle(fontSize: 16, color: Color(0xFF626F47)),
+                  ),
+                ),
               ],
             ),
           ),
@@ -115,10 +125,14 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
   }
 
   // Membuat text field yang digunakan dalam form
-  Widget _buildTextField(String label, TextEditingController controller, {bool isPassword = false}) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    bool isPassword = false,
+  }) {
     return TextFormField(
       controller: controller,
-      obscureText: isPassword,  // Menyembunyikan teks jika itu adalah password
+      obscureText: isPassword, // Menyembunyikan teks jika itu adalah password
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
