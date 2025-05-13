@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'login.dart';
+import 'login_ip.dart';
 
 class DaftarHamilBalitaScreen extends StatefulWidget {
   const DaftarHamilBalitaScreen({super.key});
@@ -10,7 +10,7 @@ class DaftarHamilBalitaScreen extends StatefulWidget {
 }
 
 class _DaftarHamilBalitaScreenState extends State<DaftarHamilBalitaScreen> {
-  final _formKey = GlobalKey<FormState>(); // GlobalKey untuk validasi form
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _namaLengkapController = TextEditingController();
   final TextEditingController _nikController = TextEditingController();
   final TextEditingController _usiaKehamilanController =
@@ -27,7 +27,7 @@ class _DaftarHamilBalitaScreenState extends State<DaftarHamilBalitaScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Form(
-            key: _formKey, // Menambahkan Form dengan key untuk validasi
+            key: _formKey,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -49,9 +49,8 @@ class _DaftarHamilBalitaScreenState extends State<DaftarHamilBalitaScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(
-                  height: 30,
-                ), // Menambah jarak antara teks dan input field
+                const SizedBox(height: 30),
+
                 // Input fields
                 _buildTextField('Nama Lengkap', _namaLengkapController),
                 const SizedBox(height: 15),
@@ -91,18 +90,17 @@ class _DaftarHamilBalitaScreenState extends State<DaftarHamilBalitaScreen> {
                   isPassword: true,
                 ),
 
-                const SizedBox(
-                  height: 30,
-                ), // Menambah jarak antara input field dan tombol
+                const SizedBox(height: 30),
                 // Tombol Daftar
                 ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState?.validate() ?? false) {
-                      // Jika form valid, lakukan tindakan selanjutnya (misalnya pendaftaran)
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
+                          builder:
+                              (context) =>
+                                  const LoginIPScreen(userType: 'userType'),
                         ),
                       );
                     }
@@ -119,21 +117,21 @@ class _DaftarHamilBalitaScreenState extends State<DaftarHamilBalitaScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(
-                        0xFFF9F3D1,
-                      ), // Warna teks sesuai dengan warna background tombol
+                      color: Color(0xFFF9F3D1),
                     ),
                   ),
                 ),
 
-                // Tambahkan link untuk mengarahkan ke login jika sudah punya akun
+                // Link untuk mengarahkan ke login jika sudah punya akun
                 const SizedBox(height: 20),
                 TextButton(
                   onPressed: () {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
+                        builder:
+                            (context) =>
+                                const LoginIPScreen(userType: 'userType'),
                       ),
                     );
                   },
@@ -158,16 +156,16 @@ class _DaftarHamilBalitaScreenState extends State<DaftarHamilBalitaScreen> {
   }) {
     return TextFormField(
       controller: controller,
-      obscureText: isPassword, // Menyembunyikan teks jika itu adalah password
+      obscureText: isPassword,
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
         filled: true,
-        fillColor: const Color(0xFFD8D1A8), // Warna latar belakang input
+        fillColor: const Color(0xFFD8D1A8),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Field ini harus diisi'; // Validasi input kosong
+          return 'Field ini harus diisi';
         }
         return null;
       },

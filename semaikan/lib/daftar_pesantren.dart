@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'login.dart'; // Pastikan LoginScreen sudah ada di proyek Anda
+import 'login_ip.dart';
 
 class DaftarPesantrenScreen extends StatefulWidget {
   const DaftarPesantrenScreen({super.key});
@@ -72,11 +72,13 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
                 ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState?.validate() ?? false) {
-                      // Jika form valid, lakukan navigasi ke LoginScreen setelah pendaftaran
+                      // Jika form valid, lakukan navigasi ke LoginIPScreen setelah pendaftaran
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
+                          builder:
+                              (context) =>
+                                  const LoginIPScreen(userType: 'sekolah'),
                         ), // Arahkan ke halaman Login
                       );
                     }
@@ -107,7 +109,8 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
+                        builder:
+                            (context) => LoginIPScreen(userType: 'sekolah'),
                       ),
                     );
                   },

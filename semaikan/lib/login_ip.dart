@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:semaikan/home.dart'; // Pastikan file home.dart sudah ada dan diimport
+import 'package:semaikan/home.dart'; // Pastikan import home.dart
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class LoginIPScreen extends StatefulWidget {
+  final String userType; // 'hamil' atau 'sekolah'
+
+  const LoginIPScreen({super.key, required this.userType});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<LoginIPScreen> createState() => _LoginIPScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>(); // GlobalKey untuk validasi form
+class _LoginIPScreenState extends State<LoginIPScreen> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _kataSandiController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
+    // Menentukan judul berdasarkan tipe pengguna
+    String title =
+        widget.userType == 'sekolah'
+            ? 'Login Sekolah/Pesantren'
+            : 'Login Ibu Hamil/Balita';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9F3D1),
       body: Center(
@@ -29,13 +37,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 20),
                 RichText(
                   textAlign: TextAlign.center,
-                  text: const TextSpan(
-                    style: TextStyle(fontSize: 20, color: Color(0xFF626F47)),
+                  text: TextSpan(
+                    style: const TextStyle(
+                      fontSize: 20,
+                      color: Color(0xFF626F47),
+                    ),
                     children: [
                       TextSpan(
-                        text: 'MASUK PETUGAS\n',
-                        style: TextStyle(
-                          fontSize: 30,
+                        text: '$title\n',
+                        style: const TextStyle(
+                          fontSize: 26,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -54,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState?.validate() ?? false) {
-                      // Navigasi ke halaman HomeScreen setelah login berhasil
+                      // Setelah login berhasil, arahkan ke halaman HomeScreen
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
