@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:semaikan/petugas%20distribusi/home.dart';
+import 'package:semaikan/petugas%20distribusi/laporan.dart';
 
 class DistribusiPage extends StatefulWidget {
   const DistribusiPage({super.key});
@@ -298,6 +299,22 @@ class _DistribusiPageState extends State<DistribusiPage> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const HomePage()),
+          );
+        }
+
+        if (index == 1) {
+          // Menu Distribusi
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const DistribusiPage()),
+          );
+        }
+
+        if (index == 3) {
+          // Menu Distribusi
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LaporanPage()),
           );
         }
         // Implementasi navigasi ke halaman lain

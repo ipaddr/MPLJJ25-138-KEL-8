@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:semaikan/petugas%20distribusi/distribusi.dart';
+import 'package:semaikan/profile.dart';
+import '../petugas distribusi/distribusi.dart';
+import '../petugas distribusi/laporan.dart';
+import 'package:semaikan/notifikasi.dart'; // Import halaman Notifikasi
 import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePage extends StatefulWidget {
@@ -128,6 +131,10 @@ class _HomePageState extends State<HomePage> {
         GestureDetector(
           onTap: () {
             // Navigasi ke halaman profil
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ProfilePage()),
+            );
           },
           child: Container(
             height: 40,
@@ -340,6 +347,12 @@ class _HomePageState extends State<HomePage> {
               ElevatedButton(
                 onPressed: () {
                   // Navigasi ke halaman notifikasi
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotifikasiPage(),
+                    ),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFD8D1A8),
@@ -457,6 +470,12 @@ class _HomePageState extends State<HomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const DistribusiPage()),
+          );
+        } else if (index == 3) {
+          // Menu Laporan
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LaporanPage()),
           );
         }
         // Implementasi navigasi ke halaman lain
