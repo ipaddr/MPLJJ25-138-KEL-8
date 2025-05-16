@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'login_ip.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'login_ip.dart'; // Pastikan file login_ip.dart sudah ada dan diimport
 
 class DaftarHamilBalitaScreen extends StatefulWidget {
   const DaftarHamilBalitaScreen({super.key});
@@ -18,6 +19,9 @@ class _DaftarHamilBalitaScreenState extends State<DaftarHamilBalitaScreen> {
   final TextEditingController _beratBadanController = TextEditingController();
   final TextEditingController _tinggiBadanController = TextEditingController();
   final TextEditingController _kataSandiController = TextEditingController();
+  final TextEditingController _konfirmasiKataSandiController =
+      TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -84,25 +88,70 @@ class _DaftarHamilBalitaScreenState extends State<DaftarHamilBalitaScreen> {
                   ],
                 ),
                 const SizedBox(height: 15),
+                _buildTextField('Email', _emailController),
+                const SizedBox(height: 15),
                 _buildTextField(
                   'Kata Sandi',
                   _kataSandiController,
                   isPassword: true,
                 ),
-
+                const SizedBox(height: 15),
+                _buildTextField(
+                  'Konfirmasi Kata Sandi',
+                  _konfirmasiKataSandiController,
+                  isPassword: true,
+                ),
                 const SizedBox(height: 30),
                 // Tombol Daftar
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKey.currentState?.validate() ?? false) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) =>
-                                  const LoginIPScreen(userType: 'userType'),
-                        ),
-                      );
+                      String email = _emailController.text.trim();
+                      String password = _kataSandiController.text.trim();
+                      String confirmPassword =
+                          _konfirmasiKataSandiController.text.trim();
+
+                      // Validasi konfirmasi kata sandi
+                      if (password != confirmPassword) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Kata sandi dan konfirmasi tidak cocok',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+
+                      try {
+                        UserCredential userCredential = await FirebaseAuth
+                            .instance
+                            .createUserWithEmailAndPassword(
+                              email: email,
+                              password: password,
+                            );
+                      } on FirebaseAuthException catch (e) {
+                        // Tangani kesalahan Firebase Authentication
+                        String errorMessage = '';
+                        if (e.code == 'email-already-in-use') {
+                          errorMessage = 'Email sudah digunakan!';
+                        } else if (e.code == 'weak-password') {
+                          errorMessage = 'Kata sandi terlalu lemah!';
+                        } else {
+                          errorMessage = 'Terjadi kesalahan: ${e.message}';
+                        }
+                        // Menampilkan pesan error
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+                      } catch (e) {
+                        // Tangani kesalahan lain
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Terjadi kesalahan, coba lagi'),
+                          ),
+                        );
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(

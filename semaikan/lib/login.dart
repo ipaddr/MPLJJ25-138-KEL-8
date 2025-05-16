@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:semaikan/home.dart'; // Pastikan file home.dart sudah ada dan diimport
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -52,15 +53,47 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 30),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKey.currentState?.validate() ?? false) {
-                      // Navigasi ke halaman HomeScreen setelah login berhasil
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HomeScreen(),
-                        ),
-                      );
+                      String email = _emailController.text.trim();
+                      String password = _kataSandiController.text.trim();
+
+                      try {
+                        // Mencoba login dengan email dan kata sandi
+                        await FirebaseAuth.instance.signInWithEmailAndPassword(
+                          email: email,
+                          password: password,
+                        );
+
+                        // Jika login berhasil, arahkan ke halaman HomeScreen
+                        if (mounted) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HomeScreen(),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        // Tangani error jika login gagal
+                        String errorMessage = 'Terjadi kesalahan, coba lagi';
+                        if (e is FirebaseAuthException) {
+                          if (e.code == 'user-not-found') {
+                            errorMessage = 'Email belum terdaftar';
+                          } else if (e.code == 'wrong-password') {
+                            errorMessage = 'Kata sandi salah';
+                          } else {
+                            errorMessage = 'Kesalahan: ${e.message}';
+                          }
+                        }
+
+                        // Tampilkan pesan error menggunakan ScaffoldMessenger
+                        if (mounted) {
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(errorMessage)));
+                        }
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(

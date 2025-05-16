@@ -20,8 +20,8 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
     // Menentukan judul berdasarkan tipe pengguna
     String title =
         widget.userType == 'sekolah'
-            ? 'Login Sekolah/Pesantren'
-            : 'Login Ibu Hamil/Balita';
+            ? 'MASUK SEKOLAH/PESANTREN'
+            : 'MASUK IBU HAMIL/BALITA';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F3D1),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'login_ip.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'login_ip.dart'; // Pastikan file login_ip.dart sudah ada dan diimport
 
 class DaftarPesantrenScreen extends StatefulWidget {
   const DaftarPesantrenScreen({super.key});
@@ -16,6 +17,8 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
       TextEditingController();
   final TextEditingController _emailSekolahController = TextEditingController();
   final TextEditingController _kataSandiController = TextEditingController();
+  final TextEditingController _konfirmasiKataSandiController =
+      TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -64,23 +67,68 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
                   _kataSandiController,
                   isPassword: true,
                 ),
+                const SizedBox(height: 15),
+                _buildTextField(
+                  'Konfirmasi Kata Sandi',
+                  _konfirmasiKataSandiController,
+                  isPassword: true,
+                ),
 
                 const SizedBox(
                   height: 30,
                 ), // Menambah jarak antara input field dan tombol
                 // Tombol Daftar
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKey.currentState?.validate() ?? false) {
-                      // Jika form valid, lakukan navigasi ke LoginIPScreen setelah pendaftaran
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) =>
-                                  const LoginIPScreen(userType: 'sekolah'),
-                        ), // Arahkan ke halaman Login
-                      );
+                      String email = _emailSekolahController.text.trim();
+                      String password = _kataSandiController.text.trim();
+                      String confirmPassword =
+                          _konfirmasiKataSandiController.text.trim();
+
+                      // Validasi konfirmasi kata sandi
+                      if (password != confirmPassword) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Kata sandi dan konfirmasi tidak cocok',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+
+                      try {
+                        // Mendaftar akun baru menggunakan Firebase Authentication
+                        UserCredential userCredential = await FirebaseAuth
+                            .instance
+                            .createUserWithEmailAndPassword(
+                              email: email,
+                              password: password,
+                            );
+
+                        // Jika pendaftaran berhasil, tampilkan pesan sukses
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Akun berhasil dibuat!'),
+                          ),
+                        );
+
+                        // Arahkan pengguna ke halaman Login setelah pendaftaran
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) =>
+                                    const LoginIPScreen(userType: 'sekolah'),
+                          ),
+                        );
+                      } catch (e) {
+                        // Tangani error saat pendaftaran gagal
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Terjadi kesalahan: $e')),
+                        );
+                      }
                     }
                   },
                   style: ElevatedButton.styleFrom(

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:semaikan/daftar_hamil_balita.dart';
 import 'package:semaikan/daftar_pesantren.dart';
 import 'package:semaikan/login.dart';
-import 'package:semaikan/login_ip.dart';
 
 class UserSelectionScreen extends StatelessWidget {
   const UserSelectionScreen({super.key});
