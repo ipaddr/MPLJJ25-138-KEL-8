@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:semaikan/home.dart'; // Pastikan import home.dart
+import 'package:semaikan/petugas%20distribusi/home.dart'; // Pastikan import home.dart
 
 class LoginIPScreen extends StatefulWidget {
   final String userType; // 'hamil' atau 'sekolah'
@@ -69,7 +69,7 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const HomeScreen(),
+                          builder: (context) => const HomePage(),
                         ),
                       );
                     }

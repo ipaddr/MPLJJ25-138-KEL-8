@@ -41,46 +41,48 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBt1zok8LbwZnS_mODG_gJwOK90JYLIePI',
-    appId: '1:358326743764:web:48f39b336bbccc74d10141',
-    messagingSenderId: '358326743764',
-    projectId: 'kel8-semaikan',
-    authDomain: 'kel8-semaikan.firebaseapp.com',
-    storageBucket: 'kel8-semaikan.firebasestorage.app',
+    apiKey: 'AIzaSyB52Xt04-kjnqc9TbnkQAC3lQ_9QUqAlUI',
+    appId: '1:848737160015:web:be22a96036473c38eed33a',
+    messagingSenderId: '848737160015',
+    projectId: 'semaikan-5fa4e',
+    authDomain: 'semaikan-5fa4e.firebaseapp.com',
+    storageBucket: 'semaikan-5fa4e.firebasestorage.app',
+    measurementId: 'G-DYT96109Z3',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDIailyHxWl292MF1xTGPNJTSA25-gdSY4',
-    appId: '1:358326743764:android:c733348445c144cdd10141',
-    messagingSenderId: '358326743764',
-    projectId: 'kel8-semaikan',
-    storageBucket: 'kel8-semaikan.firebasestorage.app',
+    apiKey: 'AIzaSyCFTDQ8hcZ-tYrPG-l40QKK90EohtuZgZ4',
+    appId: '1:848737160015:android:e59ab8ce6413f466eed33a',
+    messagingSenderId: '848737160015',
+    projectId: 'semaikan-5fa4e',
+    storageBucket: 'semaikan-5fa4e.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyA9kUFGB6Bo8XcLiCvMH1UkdGnB6GMnlyw',
-    appId: '1:358326743764:ios:1330888a37fc993bd10141',
-    messagingSenderId: '358326743764',
-    projectId: 'kel8-semaikan',
-    storageBucket: 'kel8-semaikan.firebasestorage.app',
+    apiKey: 'AIzaSyDdApAT1Wc3akSejT7yMhqBUdYnvY9N-Jk',
+    appId: '1:848737160015:ios:8e06d74da3eeb138eed33a',
+    messagingSenderId: '848737160015',
+    projectId: 'semaikan-5fa4e',
+    storageBucket: 'semaikan-5fa4e.firebasestorage.app',
     iosBundleId: 'com.example.semaikan',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyA9kUFGB6Bo8XcLiCvMH1UkdGnB6GMnlyw',
-    appId: '1:358326743764:ios:1330888a37fc993bd10141',
-    messagingSenderId: '358326743764',
-    projectId: 'kel8-semaikan',
-    storageBucket: 'kel8-semaikan.firebasestorage.app',
+    apiKey: 'AIzaSyDdApAT1Wc3akSejT7yMhqBUdYnvY9N-Jk',
+    appId: '1:848737160015:ios:8e06d74da3eeb138eed33a',
+    messagingSenderId: '848737160015',
+    projectId: 'semaikan-5fa4e',
+    storageBucket: 'semaikan-5fa4e.firebasestorage.app',
     iosBundleId: 'com.example.semaikan',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBt1zok8LbwZnS_mODG_gJwOK90JYLIePI',
-    appId: '1:358326743764:web:c30eb98f71c43ce2d10141',
-    messagingSenderId: '358326743764',
-    projectId: 'kel8-semaikan',
-    authDomain: 'kel8-semaikan.firebaseapp.com',
-    storageBucket: 'kel8-semaikan.firebasestorage.app',
+    apiKey: 'AIzaSyB52Xt04-kjnqc9TbnkQAC3lQ_9QUqAlUI',
+    appId: '1:848737160015:web:3d732eec85aa5266eed33a',
+    messagingSenderId: '848737160015',
+    projectId: 'semaikan-5fa4e',
+    authDomain: 'semaikan-5fa4e.firebaseapp.com',
+    storageBucket: 'semaikan-5fa4e.firebasestorage.app',
+    measurementId: 'G-J0V9EQYNQP',
   );
 }
