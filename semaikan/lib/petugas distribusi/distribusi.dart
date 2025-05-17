@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:semaikan/petugas%20distribusi/home.dart';
-import 'package:semaikan/petugas%20distribusi/laporan.dart';
+import 'package:semaikan/maps.dart';
+import 'package:semaikan/tracking_distribusi.dart'; // Import halaman tracking
+import '../petugas distribusi/home.dart';
+import '../petugas distribusi/laporan.dart';
 
 class DistribusiPage extends StatefulWidget {
   const DistribusiPage({super.key});
@@ -58,15 +60,30 @@ class _DistribusiPageState extends State<DistribusiPage> {
 
               const SizedBox(height: 16),
 
-              // Laporan distribusi list
-              _buildLaporanItem('Laporan SMAN 1 Kota Padang', '22 April 2025'),
+              // Laporan distribusi list dengan data tracking
+              _buildLaporanItem({
+                'id': 'DIS001',
+                'title': 'Laporan SMAN 1 Kota Padang',
+                'date': '22 April 2025',
+                'status': 'Dalam Perjalanan',
+                'statusColor': Colors.blue,
+              }),
               const SizedBox(height: 16),
-              _buildLaporanItem(
-                'Laporan Pesantren Nusa Bangsa',
-                '18 April 2025',
-              ),
+              _buildLaporanItem({
+                'id': 'DIS002',
+                'title': 'Laporan Pesantren Nusa Bangsa',
+                'date': '18 April 2025',
+                'status': 'Selesai',
+                'statusColor': Colors.green,
+              }),
               const SizedBox(height: 16),
-              _buildLaporanItem('Laporan Ny. Siti Aisyah', '01 April 2025'),
+              _buildLaporanItem({
+                'id': 'DIS003',
+                'title': 'Laporan Ny. Siti Aisyah',
+                'date': '01 April 2025',
+                'status': 'Selesai',
+                'statusColor': Colors.green,
+              }),
             ],
           ),
         ),
@@ -190,8 +207,8 @@ class _DistribusiPageState extends State<DistribusiPage> {
     );
   }
 
-  // Widget untuk setiap item laporan
-  Widget _buildLaporanItem(String title, String date) {
+  // Widget untuk setiap item laporan dengan tracking
+  Widget _buildLaporanItem(Map<String, dynamic> data) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -223,7 +240,7 @@ class _DistribusiPageState extends State<DistribusiPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  data['title'],
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -232,29 +249,72 @@ class _DistribusiPageState extends State<DistribusiPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  date,
+                  data['date'],
                   style: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF626F47),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Status badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (data['statusColor'] as Color).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: data['statusColor'] as Color,
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    data['status'],
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: data['statusColor'] as Color,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
-          // Tombol LACAK
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFD8D1A8),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              'LACAK',
-              style: TextStyle(
-                fontSize: 12,
-                color: Color(0xFF626F47),
-                fontWeight: FontWeight.bold,
+          // Tombol LACAK dengan navigasi ke tracking
+          GestureDetector(
+            onTap: () {
+              // Navigasi ke halaman tracking
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => TrackingDistribusiPage(distribusiData: data),
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFD8D1A8),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.location_on, size: 16, color: Color(0xFF626F47)),
+                  SizedBox(width: 4),
+                  Text(
+                    'LACAK',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF626F47),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -267,9 +327,9 @@ class _DistribusiPageState extends State<DistribusiPage> {
   Widget _buildBottomNavigationBar() {
     return Container(
       height: 60,
-      decoration: BoxDecoration(
-        color: const Color(0xFF8F8962),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: const BoxDecoration(
+        color: Color(0xFF8F8962),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -295,29 +355,30 @@ class _DistribusiPageState extends State<DistribusiPage> {
 
         // Navigasi berdasarkan menu yang dipilih
         if (index == 0) {
-          // Menu Distribusi
+          // Menu Home
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const HomePage()),
           );
-        }
-
-        if (index == 1) {
+        } else if (index == 1) {
           // Menu Distribusi
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const DistribusiPage()),
           );
-        }
-
-        if (index == 3) {
-          // Menu Distribusi
+        } else if (index == 2) {
+          // Menu Laporan
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MapsPage()),
+          );
+        } else if (index == 3) {
+          // Menu Laporan
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const LaporanPage()),
           );
         }
-        // Implementasi navigasi ke halaman lain
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

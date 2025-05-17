@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:semaikan/maps.dart';
 import 'package:semaikan/profile.dart';
 import '../petugas distribusi/distribusi.dart';
 import '../petugas distribusi/laporan.dart';
-import 'package:semaikan/notifikasi.dart'; // Import halaman Notifikasi
+import '../petugas distribusi/notifikasi.dart'; // Import halaman Notifikasi
 import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePage extends StatefulWidget {
@@ -94,7 +95,7 @@ class _HomePageState extends State<HomePage> {
               width: 70,
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
               child: Image.asset(
-                'assets/logo.png', // Pastikan logo ada di assets
+                'assets/splashscreen.png', // Pastikan logo ada di assets
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   return const Icon(
@@ -470,6 +471,12 @@ class _HomePageState extends State<HomePage> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const DistribusiPage()),
+          );
+        } else if (index == 2) {
+          // Menu Laporan
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MapsPage()),
           );
         } else if (index == 3) {
           // Menu Laporan
