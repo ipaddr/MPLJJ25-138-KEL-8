@@ -40,7 +40,12 @@ dependencies:
   cloud_firestore: ^4.15.4
   image_picker: ^1.1.2
   google_maps_flutter: ^2.5.0
-  
+  pdf: ^3.10.4       # Untuk membuat dokumen PDF
+  printing: ^5.11.0  # Untuk fitur preview dan print
+  path_provider: ^2.1.1  # Untuk akses direktori penyimpanan
+  share_plus: ^7.2.1  # Untuk membagikan file
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
