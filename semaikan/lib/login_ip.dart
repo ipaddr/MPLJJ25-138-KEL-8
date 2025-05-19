@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:semaikan/petugas%20distribusi/home.dart'; // Pastikan import home.dart
+import '../pesantren/home_p.dart';
+import '../ibu hamil/home_ih.dart'; // Pastikan import home.dart
 
 class LoginIPScreen extends StatefulWidget {
   final String userType; // 'hamil' atau 'sekolah'
@@ -64,12 +65,18 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: () {
-                    if (_formKey.currentState?.validate() ?? false) {
-                      // Setelah login berhasil, arahkan ke halaman HomeScreen
+                    if (widget.userType == 'hamil') {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const HomePage(),
+                          builder: (context) => const HomePageIH(),
+                        ),
+                      );
+                    } else if (widget.userType == 'sekolah') {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const HomePageP(),
                         ),
                       );
                     }
