@@ -3,7 +3,7 @@ import 'package:semaikan/maps.dart';
 import 'package:semaikan/profile.dart';
 import '../ibu hamil/distribusi_ih.dart';
 import '../ibu hamil/laporan_ih.dart';
-import '../petugas distribusi/notifikasi.dart'; // Import halaman Notifikasi
+import '../notifikasi_ip.dart'; // Import halaman Notifikasi
 import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePageIH extends StatefulWidget {
@@ -287,7 +287,7 @@ class _HomePageIHState extends State<HomePageIH> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const NotifikasiPage(),
+                      builder: (context) => const NotifikasiPageIP(),
                     ),
                   );
                 },

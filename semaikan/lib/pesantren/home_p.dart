@@ -3,7 +3,7 @@ import 'package:semaikan/maps.dart';
 import 'package:semaikan/profile.dart';
 import '../pesantren/distribusi_p.dart';
 import '../pesantren/laporan_p.dart';
-import '../petugas distribusi/notifikasi.dart'; // Import halaman Notifikasi
+import '../notifikasi_ip.dart'; // Import halaman Notifikasi
 import 'package:firebase_auth/firebase_auth.dart';
 
 class HomePageP extends StatefulWidget {
@@ -358,7 +358,7 @@ class _HomePagePState extends State<HomePageP> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const NotifikasiPage(),
+                      builder: (context) => const NotifikasiPageIP(),
                     ),
                   );
                 },
