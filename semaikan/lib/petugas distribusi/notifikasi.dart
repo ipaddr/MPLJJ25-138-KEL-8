@@ -242,6 +242,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
 }
 
 // Halaman konfirmasi laporan (mirip konfirmasi follow Instagram)
+
 class KonfirmasiLaporanPage extends StatefulWidget {
   const KonfirmasiLaporanPage({super.key});
 
@@ -298,26 +299,21 @@ class _KonfirmasiLaporanPageState extends State<KonfirmasiLaporanPage> {
     });
   }
 
-  // Fungsi untuk memproses permintaan (terima/tolak)
-  void _processRequest(int id, String action) {
+  // Fungsi untuk memproses permintaan
+  void _processRequest(int id) {
     setState(() {
       final index = _requestList.indexWhere((request) => request['id'] == id);
       if (index != -1) {
-        _requestList[index]['status'] =
-            action == 'accept' ? 'Diterima' : 'Ditolak';
+        _requestList[index]['status'] = 'Sedang diproses';
         _processedIds.add(id);
       }
     });
 
     // Tampilkan snackbar konfirmasi
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          action == 'accept'
-              ? 'Permintaan berhasil diterima'
-              : 'Permintaan ditolak',
-        ),
-        backgroundColor: action == 'accept' ? Colors.green : Colors.red,
+      const SnackBar(
+        content: Text('Permintaan berhasil dikonfirmasi'),
+        backgroundColor: Colors.green,
       ),
     );
   }
@@ -379,7 +375,6 @@ class _KonfirmasiLaporanPageState extends State<KonfirmasiLaporanPage> {
                           padding: const EdgeInsets.all(16),
                           child: Row(
                             children: [
-                              // Icon atau gambar sekolah/pesantren
                               Container(
                                 width: 60,
                                 height: 60,
@@ -393,10 +388,7 @@ class _KonfirmasiLaporanPageState extends State<KonfirmasiLaporanPage> {
                                   size: 30,
                                 ),
                               ),
-
                               const SizedBox(width: 16),
-
-                              // Informasi permintaan
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -431,8 +423,7 @@ class _KonfirmasiLaporanPageState extends State<KonfirmasiLaporanPage> {
                             ],
                           ),
                         ),
-
-                        // Status dan tombol aksi
+                        // Status atau tombol aksi
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: const BoxDecoration(
@@ -445,90 +436,36 @@ class _KonfirmasiLaporanPageState extends State<KonfirmasiLaporanPage> {
                           ),
                           child:
                               isProcessed
-                                  // Jika sudah diproses, tampilkan status
                                   ? Center(
                                     child: Text(
                                       'Status: ${request['status']}',
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
-                                        color:
-                                            request['status'] == 'Diterima'
-                                                ? Colors.green
-                                                : Colors.red,
+                                        color: Colors.orange,
                                       ),
                                     ),
                                   )
-                                  // Jika belum diproses, tampilkan tombol aksi
-                                  : Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      // Tombol Tolak
-                                      Expanded(
-                                        child: OutlinedButton(
-                                          onPressed:
-                                              () => _processRequest(
-                                                request['id'],
-                                                'reject',
-                                              ),
-                                          style: OutlinedButton.styleFrom(
-                                            foregroundColor: Colors.red,
-                                            side: const BorderSide(
-                                              color: Colors.red,
-                                              width: 1,
-                                            ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 10,
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            'Tolak',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
+                                  : ElevatedButton(
+                                    onPressed:
+                                        () => _processRequest(request['id']),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF626F47),
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-
-                                      const SizedBox(width: 16),
-
-                                      // Tombol Terima
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          onPressed:
-                                              () => _processRequest(
-                                                request['id'],
-                                                'accept',
-                                              ),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(
-                                              0xFF626F47,
-                                            ),
-                                            foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              vertical: 10,
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            'Terima',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 10,
                                       ),
-                                    ],
+                                    ),
+                                    child: const Text(
+                                      'Sedang Diproses',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
                         ),
                       ],

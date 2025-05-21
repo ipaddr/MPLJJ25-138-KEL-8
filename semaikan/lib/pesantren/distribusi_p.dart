@@ -3,6 +3,7 @@ import 'package:semaikan/maps.dart';
 import 'package:semaikan/tracking_distribusi.dart'; // Import halaman tracking
 import '../pesantren/home_p.dart';
 import '../pesantren/laporan_p.dart';
+import '../pengajuan.dart';
 
 class DistribusiPageP extends StatefulWidget {
   const DistribusiPageP({super.key});
@@ -310,8 +311,9 @@ class _DistribusiPagePState extends State<DistribusiPageP> {
         children: [
           _buildNavItem(Icons.home, 'Home', 0),
           _buildNavItem(Icons.menu_book, 'Distribusi', 1),
-          _buildNavItem(Icons.map, 'Maps', 2),
-          _buildNavItem(Icons.assignment, 'Laporan', 3),
+          _buildNavItem(Icons.add, 'Pengajuan', 2),
+          _buildNavItem(Icons.map, 'Maps', 3),
+          _buildNavItem(Icons.assignment, 'Laporan', 4),
         ],
       ),
     );
@@ -339,6 +341,11 @@ class _DistribusiPagePState extends State<DistribusiPageP> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const DistribusiPageP()),
+          );
+        } else if (index == 2) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const PengajuanPage()),
           );
         } else if (index == 2) {
           // Menu Laporan

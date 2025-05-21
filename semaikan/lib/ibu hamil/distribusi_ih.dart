@@ -3,6 +3,7 @@ import 'package:semaikan/maps.dart';
 import 'package:semaikan/tracking_distribusi.dart'; // Import halaman tracking
 import '../ibu hamil/home_ih.dart';
 import '../ibu hamil/laporan_ih.dart';
+import '../pengajuan.dart';
 
 class DistribusiPageIH extends StatefulWidget {
   const DistribusiPageIH({super.key});
@@ -257,8 +258,9 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
         children: [
           _buildNavItem(Icons.home, 'Home', 0),
           _buildNavItem(Icons.menu_book, 'Distribusi', 1),
-          _buildNavItem(Icons.map, 'Maps', 2),
-          _buildNavItem(Icons.assignment, 'Laporan', 3),
+          _buildNavItem(Icons.add, 'Pengajuan', 2),
+          _buildNavItem(Icons.map, 'Maps', 3),
+          _buildNavItem(Icons.assignment, 'Laporan', 4),
         ],
       ),
     );
@@ -286,6 +288,11 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const DistribusiPageIH()),
+          );
+        } else if (index == 2) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const PengajuanPage()),
           );
         } else if (index == 2) {
           // Menu Laporan
