@@ -37,12 +37,8 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Banner Konfirmasi Laporan Pengajuan
               _buildConfirmationBanner(),
-
               const SizedBox(height: 24),
-
-              // Hari Ini
               const Text(
                 'Hari Ini',
                 style: TextStyle(
@@ -52,20 +48,13 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                 ),
               ),
               const SizedBox(height: 12),
-
-              // Daftar notifikasi hari ini
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: 3,
-                itemBuilder: (context, index) {
-                  return _buildNotificationItem();
-                },
+                itemBuilder: (context, index) => _buildNotificationItem(),
               ),
-
               const SizedBox(height: 24),
-
-              // 7 Hari Terakhir
               const Text(
                 '7 Hari Terakhir',
                 style: TextStyle(
@@ -75,15 +64,11 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                 ),
               ),
               const SizedBox(height: 12),
-
-              // Daftar notifikasi 7 hari terakhir
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: 5,
-                itemBuilder: (context, index) {
-                  return _buildNotificationItem();
-                },
+                itemBuilder: (context, index) => _buildNotificationItem(),
               ),
             ],
           ),
@@ -92,11 +77,9 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
     );
   }
 
-  // Widget untuk banner konfirmasi laporan
   Widget _buildConfirmationBanner() {
     return GestureDetector(
       onTap: () {
-        // Navigasi ke halaman konfirmasi laporan
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -116,7 +99,6 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
         ),
         child: Row(
           children: [
-            // Ikon notifikasi (menggunakan gambar stack untuk efek 3D)
             Stack(
               children: [
                 Container(
@@ -153,10 +135,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                 ),
               ],
             ),
-
             const SizedBox(width: 16),
-
-            // Teks
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,8 +156,6 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                 ],
               ),
             ),
-
-            // Ikon panah kanan
             const Icon(
               Icons.arrow_forward_ios,
               size: 16,
@@ -190,14 +167,12 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
     );
   }
 
-  // Widget untuk item notifikasi
   Widget _buildNotificationItem() {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Ikon dokumen
           Container(
             width: 40,
             height: 40,
@@ -211,10 +186,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
               size: 24,
             ),
           ),
-
           const SizedBox(width: 12),
-
-          // Konten notifikasi
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,8 +213,6 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
   }
 }
 
-// Halaman konfirmasi laporan (mirip konfirmasi follow Instagram)
-
 class KonfirmasiLaporanPage extends StatefulWidget {
   const KonfirmasiLaporanPage({super.key});
 
@@ -251,10 +221,7 @@ class KonfirmasiLaporanPage extends StatefulWidget {
 }
 
 class _KonfirmasiLaporanPageState extends State<KonfirmasiLaporanPage> {
-  // List untuk menampung data permintaan
   List<Map<String, dynamic>> _requestList = [];
-
-  // List untuk menampung ID yang sudah diproses
   List<int> _processedIds = [];
 
   @override
@@ -263,7 +230,6 @@ class _KonfirmasiLaporanPageState extends State<KonfirmasiLaporanPage> {
     _loadRequests();
   }
 
-  // Fungsi untuk memuat permintaan (simulasi data)
   void _loadRequests() {
     setState(() {
       _requestList = [
@@ -299,7 +265,6 @@ class _KonfirmasiLaporanPageState extends State<KonfirmasiLaporanPage> {
     });
   }
 
-  // Fungsi untuk memproses permintaan
   void _processRequest(int id) {
     setState(() {
       final index = _requestList.indexWhere((request) => request['id'] == id);
@@ -308,8 +273,6 @@ class _KonfirmasiLaporanPageState extends State<KonfirmasiLaporanPage> {
         _processedIds.add(id);
       }
     });
-
-    // Tampilkan snackbar konfirmasi
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Permintaan berhasil dikonfirmasi'),
@@ -357,7 +320,6 @@ class _KonfirmasiLaporanPageState extends State<KonfirmasiLaporanPage> {
                   final bool isProcessed = _processedIds.contains(
                     request['id'],
                   );
-
                   return Container(
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
@@ -368,107 +330,32 @@ class _KonfirmasiLaporanPageState extends State<KonfirmasiLaporanPage> {
                         width: 1,
                       ),
                     ),
-                    child: Column(
-                      children: [
-                        // Header dengan informasi permintaan
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 60,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFECE8C8),
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                child: const Icon(
-                                  Icons.school,
-                                  color: Color(0xFF626F47),
-                                  size: 30,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      request['name'],
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF626F47),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Tanggal: ${request['date']}',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF626F47),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Tipe: ${request['type']}',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF626F47),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                    child: ListTile(
+                      title: Text(
+                        request['name'],
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF626F47),
                         ),
-                        // Status atau tombol aksi
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              top: BorderSide(
-                                color: Color(0xFFECE8C8),
-                                width: 1,
+                      ),
+                      subtitle: Text(
+                        '${request['type']} • ${request['date']}',
+                        style: const TextStyle(color: Color(0xFF626F47)),
+                      ),
+                      trailing:
+                          isProcessed
+                              ? const Text(
+                                'Sedang diproses',
+                                style: TextStyle(color: Colors.orange),
+                              )
+                              : ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF626F47),
+                                  foregroundColor: Colors.white,
+                                ),
+                                onPressed: () => _processRequest(request['id']),
+                                child: const Text('Konfirmasi'),
                               ),
-                            ),
-                          ),
-                          child:
-                              isProcessed
-                                  ? Center(
-                                    child: Text(
-                                      'Status: ${request['status']}',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.orange,
-                                      ),
-                                    ),
-                                  )
-                                  : ElevatedButton(
-                                    onPressed:
-                                        () => _processRequest(request['id']),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF626F47),
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 10,
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      'Sedang Diproses',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                        ),
-                      ],
                     ),
                   );
                 },
