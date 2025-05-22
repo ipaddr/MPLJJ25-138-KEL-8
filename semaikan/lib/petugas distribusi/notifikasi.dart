@@ -222,7 +222,7 @@ class KonfirmasiLaporanPage extends StatefulWidget {
 
 class _KonfirmasiLaporanPageState extends State<KonfirmasiLaporanPage> {
   List<Map<String, dynamic>> _requestList = [];
-  List<int> _processedIds = [];
+  final List<int> _processedIds = [];
 
   @override
   void initState() {

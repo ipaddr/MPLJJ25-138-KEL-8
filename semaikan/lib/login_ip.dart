@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../pesantren/home_p.dart';
-import '../ibu hamil/home_ih.dart'; // Pastikan import home.dart
+import '../ibu hamil/home_ih.dart';
 
 class LoginIPScreen extends StatefulWidget {
   final String userType; // 'hamil' atau 'sekolah'
@@ -15,6 +17,124 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _kataSandiController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _kataSandiController.dispose();
+    super.dispose();
+  }
+
+  // Fungsi untuk melakukan autentikasi dengan Firebase
+  Future<void> _signInWithEmailAndPassword() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Melakukan autentikasi dengan Firebase
+      final userCredential = await _auth.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _kataSandiController.text,
+      );
+
+      // Jika autentikasi berhasil
+      if (userCredential.user != null) {
+        // Verifikasi tipe user di Firestore
+        try {
+          DocumentSnapshot userDoc =
+              await _firestore
+                  .collection('users')
+                  .doc(userCredential.user!.uid)
+                  .get();
+
+          if (userDoc.exists) {
+            String userTypeFromDB = userDoc.get('userType');
+
+            // Cek apakah tipe user sesuai
+            if (userTypeFromDB == widget.userType) {
+              // Navigate ke halaman yang sesuai
+              if (mounted) {
+                if (widget.userType == 'hamil') {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const HomePageIH()),
+                  );
+                } else if (widget.userType == 'sekolah') {
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const HomePageP()),
+                  );
+                }
+              }
+            } else {
+              // Logout jika tipe user tidak sesuai
+              await _auth.signOut();
+              setState(() {
+                _errorMessage =
+                    'Akun ini tidak terdaftar untuk tipe pengguna yang dipilih';
+              });
+            }
+          } else {
+            // Jika data user tidak ditemukan di Firestore, tetap login tapi tanpa verifikasi
+            if (mounted) {
+              if (widget.userType == 'hamil') {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const HomePageIH()),
+                );
+              } else if (widget.userType == 'sekolah') {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const HomePageP()),
+                );
+              }
+            }
+          }
+        } catch (firestoreError) {
+          // Jika ada error Firestore, tetap login tanpa verifikasi
+          if (mounted) {
+            if (widget.userType == 'hamil') {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const HomePageIH()),
+              );
+            } else if (widget.userType == 'sekolah') {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const HomePageP()),
+              );
+            }
+          }
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      // Menangani error autentikasi Firebase
+      setState(() {
+        if (e.code == 'user-not-found') {
+          _errorMessage = 'Email tidak terdaftar';
+        } else if (e.code == 'wrong-password') {
+          _errorMessage = 'Kata sandi tidak valid';
+        } else if (e.code == 'invalid-email') {
+          _errorMessage = 'Format email tidak valid';
+        } else if (e.code == 'too-many-requests') {
+          _errorMessage = 'Terlalu banyak percobaan login. Coba lagi nanti';
+        } else {
+          _errorMessage = 'Terjadi kesalahan: ${e.message}';
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Terjadi kesalahan: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +175,8 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
                   ),
                 ),
                 const SizedBox(height: 30),
+
+                // Input fields
                 _buildTextField('Email', _emailController),
                 const SizedBox(height: 15),
                 _buildTextField(
@@ -62,38 +184,57 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
                   _kataSandiController,
                   isPassword: true,
                 ),
-                const SizedBox(height: 30),
-                ElevatedButton(
-                  onPressed: () {
-                    if (widget.userType == 'hamil') {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HomePageIH(),
-                        ),
-                      );
-                    } else if (widget.userType == 'sekolah') {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HomePageP(),
-                        ),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8F8962),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 15,
-                      horizontal: 50,
+
+                // Menampilkan pesan error jika ada
+                if (_errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.red),
                     ),
                   ),
+
+                const SizedBox(height: 30),
+
+                // Tombol Masuk dengan indikator loading
+                _isLoading
+                    ? const CircularProgressIndicator(color: Color(0xFF8F8962))
+                    : ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState?.validate() ?? false) {
+                          // Memanggil fungsi login Firebase
+                          _signInWithEmailAndPassword();
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8F8962),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 15,
+                          horizontal: 50,
+                        ),
+                      ),
+                      child: const Text(
+                        'MASUK',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFF9F3D1),
+                        ),
+                      ),
+                    ),
+
+                const SizedBox(height: 20),
+
+                // Lupa Password Link
+                TextButton(
+                  onPressed: _isLoading ? null : _showForgotPasswordDialog,
                   child: const Text(
-                    'MASUK',
+                    'Lupa Kata Sandi?',
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFF9F3D1),
+                      color: Color(0xFF626F47),
+                      decoration: TextDecoration.underline,
+                      fontSize: 16,
                     ),
                   ),
                 ),
@@ -105,6 +246,7 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
     );
   }
 
+  // Membuat text field yang digunakan dalam form
   Widget _buildTextField(
     String label,
     TextEditingController controller, {
@@ -123,7 +265,195 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
         if (value == null || value.isEmpty) {
           return 'Field ini harus diisi';
         }
+        if (label == 'Email' && !_isValidEmail(value)) {
+          return 'Masukkan format email yang valid';
+        }
         return null;
+      },
+    );
+  }
+
+  // Fungsi untuk validasi format email
+  bool _isValidEmail(String email) {
+    final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return emailRegExp.hasMatch(email);
+  }
+
+  // Dialog untuk reset password
+  void _showForgotPasswordDialog() {
+    final TextEditingController emailResetController = TextEditingController();
+    bool isResetLoading = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Tidak bisa ditutup dengan tap di luar
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFFF9F3D1),
+              title: const Text(
+                'Reset Kata Sandi',
+                style: TextStyle(
+                  color: Color(0xFF626F47),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Masukkan email Anda untuk menerima link reset kata sandi',
+                    style: TextStyle(color: Color(0xFF626F47)),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: emailResetController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Color(0xFFD8D1A8),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Email harus diisi';
+                      }
+                      if (!_isValidEmail(value)) {
+                        return 'Format email tidak valid';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed:
+                      isResetLoading
+                          ? null
+                          : () {
+                            Navigator.of(dialogContext).pop();
+                          },
+                  child: const Text(
+                    'Batal',
+                    style: TextStyle(color: Color(0xFF626F47)),
+                  ),
+                ),
+                isResetLoading
+                    ? const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Color(0xFF8F8962),
+                        ),
+                      ),
+                    )
+                    : ElevatedButton(
+                      onPressed: () async {
+                        if (emailResetController.text.isNotEmpty &&
+                            _isValidEmail(emailResetController.text)) {
+                          setDialogState(() {
+                            isResetLoading = true;
+                          });
+
+                          try {
+                            await _auth.sendPasswordResetEmail(
+                              email: emailResetController.text.trim(),
+                            );
+
+                            // Tutup dialog
+                            Navigator.of(dialogContext).pop();
+
+                            // Tampilkan pesan sukses
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Link reset password telah dikirim ke email Anda. Periksa kotak masuk dan folder spam.',
+                                  ),
+                                  backgroundColor: Colors.green,
+                                  duration: Duration(seconds: 5),
+                                ),
+                              );
+                            }
+                          } on FirebaseAuthException catch (e) {
+                            setDialogState(() {
+                              isResetLoading = false;
+                            });
+
+                            String errorMessage;
+                            switch (e.code) {
+                              case 'user-not-found':
+                                errorMessage =
+                                    'Email tidak terdaftar dalam sistem';
+                                break;
+                              case 'invalid-email':
+                                errorMessage = 'Format email tidak valid';
+                                break;
+                              case 'too-many-requests':
+                                errorMessage =
+                                    'Terlalu banyak permintaan. Coba lagi nanti';
+                                break;
+                              default:
+                                errorMessage =
+                                    'Terjadi kesalahan: ${e.message}';
+                            }
+
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(errorMessage),
+                                  backgroundColor: Colors.red,
+                                  duration: const Duration(seconds: 4),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setDialogState(() {
+                              isResetLoading = false;
+                            });
+
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Terjadi kesalahan: $e'),
+                                  backgroundColor: Colors.red,
+                                  duration: const Duration(seconds: 4),
+                                ),
+                              );
+                            }
+                          }
+                        } else {
+                          // Tampilkan error jika email kosong atau tidak valid
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Masukkan email yang valid'),
+                              backgroundColor: Colors.orange,
+                              duration: Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF8F8962),
+                      ),
+                      child: const Text(
+                        'Kirim',
+                        style: TextStyle(
+                          color: Color(0xFFF9F3D1),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+              ],
+            );
+          },
+        );
       },
     );
   }

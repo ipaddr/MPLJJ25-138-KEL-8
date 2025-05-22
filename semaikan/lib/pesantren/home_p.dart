@@ -313,7 +313,7 @@ class _HomePagePState extends State<HomePageP> {
       },
       child: Column(
         children: [
-          Container(
+          SizedBox(
             width: 40,
             height: 40,
 

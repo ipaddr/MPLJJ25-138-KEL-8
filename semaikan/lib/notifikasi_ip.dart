@@ -233,7 +233,7 @@ class _KonfirmasiLaporanPageState extends State<KonfirmasiLaporanPage> {
   List<Map<String, dynamic>> _requestList = [];
 
   // List untuk menampung ID yang sudah diproses
-  List<int> _processedIds = [];
+  final List<int> _processedIds = [];
 
   @override
   void initState() {

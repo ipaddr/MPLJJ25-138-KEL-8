@@ -218,8 +218,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                             child,
                                             loadingProgress,
                                           ) {
-                                            if (loadingProgress == null)
+                                            if (loadingProgress == null) {
                                               return child;
+                                            }
                                             return const Center(
                                               child: CircularProgressIndicator(
                                                 color: Color(0xFF626F47),

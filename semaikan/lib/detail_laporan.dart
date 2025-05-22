@@ -908,7 +908,7 @@ pw.Widget _buildPdfInfoSection(String title, List<Map<String, String>> items) {
             ],
           ),
         );
-      }).toList(),
+      }),
     ],
   );
 }

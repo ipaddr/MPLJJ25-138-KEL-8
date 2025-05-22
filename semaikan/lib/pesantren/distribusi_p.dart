@@ -161,7 +161,7 @@ class _DistribusiPagePState extends State<DistribusiPageP> {
         children: [
           Row(
             children: [
-              Container(
+              SizedBox(
                 width: 32,
                 height: 32,
                 child: Padding(

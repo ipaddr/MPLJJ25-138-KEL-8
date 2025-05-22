@@ -399,8 +399,9 @@ class _HomePageIHState extends State<HomePageIH> {
 
     return GestureDetector(
       onTap: () {
-        if (_currentIndex == index)
+        if (_currentIndex == index) {
           return; // Hindari navigasi ke halaman yang sama
+        }
 
         setState(() {
           _currentIndex = index;
