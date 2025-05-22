@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import '/ibu hamil/laporan_ih.dart';
 import '/pesantren/laporan_p.dart';
+import 'package:semaikan/ibu hamil/home_ih.dart';
+import 'package:semaikan/pesantren/home_p.dart';
+import 'package:semaikan/ibu hamil/distribusi_ih.dart';
+import 'package:semaikan/pesantren/distribusi_p.dart';
+import 'maps.dart';
 
 class PengajuanPage extends StatefulWidget {
   const PengajuanPage({super.key});
@@ -17,6 +22,8 @@ class _PengajuanPageState extends State<PengajuanPage> {
   final jumlahController = TextEditingController();
   final alasanController = TextEditingController();
   final lokasiController = TextEditingController();
+
+  int _currentIndex = 2; // Menunjukkan ini adalah halaman ke-3 (0 = home)
 
   bool _isAllFilled() {
     return judulController.text.isNotEmpty &&
@@ -48,6 +55,55 @@ class _PengajuanPageState extends State<PengajuanPage> {
         ),
       );
     }
+  }
+
+  Widget _buildNavItem(IconData icon, String label, int index) {
+    final bool isSelected = _currentIndex == index;
+
+    return GestureDetector(
+      onTap: () {
+        if (_currentIndex == index) return;
+
+        setState(() {
+          _currentIndex = index;
+        });
+
+        switch (index) {
+          case 0:
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePageP()),
+            );
+            break;
+          case 1:
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const DistribusiPageP()),
+            );
+            break;
+          case 2:
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const MapsPage()),
+            );
+            break;
+          case 3:
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LaporanPageP()),
+            );
+            break;
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF626F47) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Icon(icon, color: const Color(0xFFF9F3D1), size: 24),
+      ),
+    );
   }
 
   @override
@@ -126,11 +182,11 @@ class _PengajuanPageState extends State<PengajuanPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            IconButton(icon: const Icon(Icons.home), onPressed: () {}),
-            IconButton(icon: const Icon(Icons.inventory), onPressed: () {}),
-            const SizedBox(width: 40),
-            IconButton(icon: const Icon(Icons.map), onPressed: () {}),
-            IconButton(icon: const Icon(Icons.folder), onPressed: () {}),
+            _buildNavItem(Icons.home, 'Home', 0),
+            _buildNavItem(Icons.inventory, 'Distribusi', 1),
+            const SizedBox(width: 40), // untuk floating action button
+            _buildNavItem(Icons.map, 'Peta', 2),
+            _buildNavItem(Icons.folder, 'Laporan', 3),
           ],
         ),
       ),
