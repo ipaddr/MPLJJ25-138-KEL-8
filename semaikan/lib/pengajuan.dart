@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '/ibu hamil/laporan_ih.dart';
 import '/pesantren/laporan_p.dart';
-import 'package:semaikan/ibu hamil/home_ih.dart';
 import 'package:semaikan/pesantren/home_p.dart';
-import 'package:semaikan/ibu hamil/distribusi_ih.dart';
 import 'package:semaikan/pesantren/distribusi_p.dart';
 import 'maps.dart';
 
