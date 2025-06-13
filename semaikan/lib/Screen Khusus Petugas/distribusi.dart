@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:semaikan/maps.dart';
-import 'package:semaikan/tracking_distribusi.dart'; // Import halaman tracking
-import '../ibu hamil/home_ih.dart';
-import '../ibu hamil/laporan_ih.dart';
-import '../pengajuan.dart';
+import 'package:semaikan/Screen%20Bersama/maps.dart';
+import 'package:semaikan/Screen%20Bersama/tracking_distribusi.dart'; // Import halaman tracking
+import 'home.dart';
+import 'laporan.dart';
 
-class DistribusiPageIH extends StatefulWidget {
-  const DistribusiPageIH({super.key});
+class DistribusiPage extends StatefulWidget {
+  const DistribusiPage({super.key});
 
   @override
-  State<DistribusiPageIH> createState() => _DistribusiPageIHState();
+  State<DistribusiPage> createState() => _DistribusiPageState();
 }
 
-class _DistribusiPageIHState extends State<DistribusiPageIH> {
+class _DistribusiPageState extends State<DistribusiPage> {
   int _currentIndex = 1; // Index 1 untuk halaman distribusi di bottom nav
 
   @override
@@ -45,6 +44,8 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Status Distribusi Cards
+              _buildStatusCards(),
+
               const SizedBox(height: 24),
 
               // Proses Distribusi
@@ -64,24 +65,79 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
                 'id': 'DIS001',
                 'title': 'Laporan SMAN 1 Kota Padang',
                 'date': '22 April 2025',
+                'status': 'Dalam Perjalanan',
+                'statusColor': Colors.blue,
               }),
               const SizedBox(height: 16),
               _buildLaporanItem({
                 'id': 'DIS002',
                 'title': 'Laporan Pesantren Nusa Bangsa',
                 'date': '18 April 2025',
+                'status': 'Selesai',
+                'statusColor': Colors.green,
               }),
               const SizedBox(height: 16),
               _buildLaporanItem({
                 'id': 'DIS003',
                 'title': 'Laporan Ny. Siti Aisyah',
                 'date': '01 April 2025',
+                'status': 'Selesai',
+                'statusColor': Colors.green,
               }),
             ],
           ),
         ),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+
+  // Widget untuk menampilkan 4 kartu status distribusi
+  Widget _buildStatusCards() {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      childAspectRatio: 1.8,
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+      children: [
+        // Kartu Berhasil
+        _buildStatusCard(
+          icon: Icons.check_circle_outline,
+          title: '1,125',
+          subtitle: 'Distribusi sudah berhasil dilaksanakan.',
+          color: const Color(0xFF626F47),
+          label: 'Berhasil',
+        ),
+
+        // Kartu Gagal
+        _buildStatusCard(
+          icon: Icons.cancel_outlined,
+          title: '89',
+          subtitle: 'Distribusi mengalami kegagalan.',
+          color: Colors.red,
+          label: 'Gagal',
+        ),
+
+        // Kartu Tertunda
+        _buildStatusCard(
+          icon: Icons.access_time,
+          title: '125',
+          subtitle: 'Distribusi sedang dalam masa proses.',
+          color: const Color(0xFF626F47),
+          label: 'Tertunda',
+        ),
+
+        // Kartu Jumlah Penerima
+        _buildStatusCard(
+          icon: Icons.people_outline,
+          title: '2034',
+          subtitle: 'tempat telah menerima distribusi makanan.',
+          color: const Color(0xFF626F47),
+          label: '',
+        ),
+      ],
     );
   }
 
@@ -201,6 +257,28 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
                 ),
                 const SizedBox(height: 8),
                 // Status badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (data['statusColor'] as Color).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: data['statusColor'] as Color,
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    data['status'],
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: data['statusColor'] as Color,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -258,9 +336,8 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
         children: [
           _buildNavItem(Icons.home, 'Home', 0),
           _buildNavItem(Icons.menu_book, 'Distribusi', 1),
-          _buildNavItem(Icons.add, 'Pengajuan', 2),
-          _buildNavItem(Icons.map, 'Maps', 3),
-          _buildNavItem(Icons.assignment, 'Laporan', 4),
+          _buildNavItem(Icons.map, 'Maps', 2),
+          _buildNavItem(Icons.assignment, 'Laporan', 3),
         ],
       ),
     );
@@ -281,18 +358,13 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
           // Menu Home
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const HomePageIH()),
+            MaterialPageRoute(builder: (context) => const HomePage()),
           );
         } else if (index == 1) {
           // Menu Distribusi
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const DistribusiPageIH()),
-          );
-        } else if (index == 2) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const PengajuanPage()),
+            MaterialPageRoute(builder: (context) => const DistribusiPage()),
           );
         } else if (index == 2) {
           // Menu Laporan
@@ -304,7 +376,7 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
           // Menu Laporan
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const LaporanPageIH()),
+            MaterialPageRoute(builder: (context) => const LaporanPage()),
           );
         }
       },

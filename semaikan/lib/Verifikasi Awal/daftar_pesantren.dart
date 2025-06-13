@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:intl/intl.dart';
 import 'login_ip.dart'; // Pastikan login_ip.dart sudah ada di proyek Anda
 
 class DaftarPesantrenScreen extends StatefulWidget {
@@ -21,8 +24,39 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
       TextEditingController(); // Tambahan untuk konfirmasi kata sandi
 
   final FirebaseAuth _auth = FirebaseAuth.instance; // Instance Firebase Auth
+  final FirebaseFirestore _firestore =
+      FirebaseFirestore.instance; // Instance Firestore
   bool _isLoading = false; // Status loading saat proses pendaftaran
   String? _errorMessage; // Pesan error jika pendaftaran gagal
+
+  // Fungsi untuk mendapatkan tanggal dan waktu dalam format WIB
+  String _getCurrentDateTimeWIB() {
+    final now = DateTime.now();
+    // Menambahkan 7 jam untuk konversi ke WIB (UTC+7)
+    final wibTime = now.add(const Duration(hours: 7));
+    final formatter = DateFormat('dd/MM/yyyy HH:mm');
+    return '${formatter.format(wibTime)}WIB';
+  }
+
+  // Fungsi untuk menyimpan data sekolah/pesantren ke Firestore
+  Future<void> _saveSchoolDataToFirestore(String userId, String email) async {
+    try {
+      await _firestore.collection('Account_Storage').doc(userId).set({
+        'email': email,
+        'account_category': 'sekolah_pesantren',
+        'profile_picture':
+            '', // Kosong untuk sementara, bisa diisi default atau diupdate nanti
+        'date_registry': _getCurrentDateTimeWIB(),
+        // Menambahkan data lengkap dari form registrasi sekolah/pesantren
+        'nama_sekolah': _namaSekolahController.text.trim(),
+        'npsn': _npsnController.text.trim(),
+        'alamat_sekolah': _alamatSekolahController.text.trim(),
+      });
+    } catch (e) {
+      print('Error saving school data to Firestore: $e');
+      throw e; // Re-throw error untuk ditangani di fungsi pemanggil
+    }
+  }
 
   // Fungsi untuk mendaftar dengan Firebase
   Future<void> _registerWithEmailAndPassword() async {
@@ -49,11 +83,26 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
 
       // Jika pendaftaran berhasil
       if (userCredential.user != null) {
-        // Tambahkan data pengguna tambahan ke Firestore atau Realtime Database
-        // Contoh: simpan data sekolah/pesantren ke database
-        // Kode untuk menyimpan data dapat ditambahkan di sini
+        // Tunggu sebentar untuk memastikan autentikasi selesai
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Simpan data sekolah/pesantren ke Firestore
+        await _saveSchoolDataToFirestore(
+          userCredential.user!.uid, // UUID dari Firebase Auth
+          _emailSekolahController.text.trim(),
+        );
 
         if (mounted) {
+          // Tampilkan pesan sukses
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Registrasi sekolah/pesantren berhasil! Data telah disimpan.',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+
           // Navigasi ke halaman login setelah pendaftaran berhasil
           Navigator.pushReplacement(
             context,
@@ -78,9 +127,18 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
           _errorMessage = 'Terjadi kesalahan: ${e.message}';
         }
       });
+    } on FirebaseException catch (e) {
+      setState(() {
+        if (e.code == 'permission-denied') {
+          _errorMessage =
+              'Tidak memiliki izin untuk menyimpan data. Silakan coba lagi.';
+        } else {
+          _errorMessage = 'Terjadi kesalahan Firestore: ${e.message}';
+        }
+      });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Terjadi kesalahan: $e';
+        _errorMessage = 'Terjadi kesalahan saat menyimpan data: $e';
       });
     } finally {
       if (mounted) {

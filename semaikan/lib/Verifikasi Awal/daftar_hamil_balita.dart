@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:intl/intl.dart';
 import 'login_ip.dart';
 
 class DaftarHamilBalitaScreen extends StatefulWidget {
@@ -25,8 +28,41 @@ class _DaftarHamilBalitaScreenState extends State<DaftarHamilBalitaScreen> {
       TextEditingController(); // Controller untuk konfirmasi kata sandi
 
   final FirebaseAuth _auth = FirebaseAuth.instance; // Instance Firebase Auth
+  final FirebaseFirestore _firestore =
+      FirebaseFirestore.instance; // Instance Firestore
   bool _isLoading = false; // Status loading saat proses pendaftaran
   String? _errorMessage; // Pesan error jika pendaftaran gagal
+
+  // Fungsi untuk mendapatkan tanggal dan waktu dalam format WIB
+  String _getCurrentDateTimeWIB() {
+    final now = DateTime.now();
+    // Menambahkan 7 jam untuk konversi ke WIB (UTC+7)
+    final wibTime = now.add(const Duration(hours: 7));
+    final formatter = DateFormat('dd/MM/yyyy HH:mm');
+    return '${formatter.format(wibTime)}WIB';
+  }
+
+  // Fungsi untuk menyimpan data pengguna ke Firestore
+  Future<void> _saveUserDataToFirestore(String userId, String email) async {
+    try {
+      await _firestore.collection('Account_Storage').doc(userId).set({
+        'email': email,
+        'account_category': 'ibu_hamil_balita',
+        'profile_picture':
+            '', // Kosong untuk sementara, bisa diisi default atau diupdate nanti
+        'date_registry': _getCurrentDateTimeWIB(),
+        // Menambahkan data lengkap dari form registrasi
+        'nama_lengkap': _namaLengkapController.text.trim(),
+        'nik': _nikController.text.trim(),
+        'usia_kehamilan_balita': _usiaKehamilanController.text.trim(),
+        'berat_badan': _beratBadanController.text.trim(),
+        'tinggi_badan': _tinggiBadanController.text.trim(),
+      });
+    } catch (e) {
+      print('Error saving user data to Firestore: $e');
+      throw e; // Re-throw error untuk ditangani di fungsi pemanggil
+    }
+  }
 
   // Fungsi untuk mendaftar dengan Firebase
   Future<void> _registerWithEmailAndPassword() async {
@@ -53,11 +89,24 @@ class _DaftarHamilBalitaScreenState extends State<DaftarHamilBalitaScreen> {
 
       // Jika pendaftaran berhasil
       if (userCredential.user != null) {
-        // Tambahkan data pengguna tambahan ke Firestore atau Realtime Database
-        // Contoh: simpan data ibu hamil/balita ke database
-        // Kode untuk menyimpan data dapat ditambahkan di sini
+        // Tunggu sebentar untuk memastikan autentikasi selesai
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // Simpan data pengguna ke Firestore
+        await _saveUserDataToFirestore(
+          userCredential.user!.uid, // UUID dari Firebase Auth
+          _emailController.text.trim(),
+        );
 
         if (mounted) {
+          // Tampilkan pesan sukses
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Registrasi berhasil! Data telah disimpan.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
           // Navigasi ke halaman login setelah pendaftaran berhasil
           Navigator.pushReplacement(
             context,
@@ -79,9 +128,18 @@ class _DaftarHamilBalitaScreenState extends State<DaftarHamilBalitaScreen> {
           _errorMessage = 'Terjadi kesalahan: ${e.message}';
         }
       });
+    } on FirebaseException catch (e) {
+      setState(() {
+        if (e.code == 'permission-denied') {
+          _errorMessage =
+              'Tidak memiliki izin untuk menyimpan data. Silakan coba lagi.';
+        } else {
+          _errorMessage = 'Terjadi kesalahan Firestore: ${e.message}';
+        }
+      });
     } catch (e) {
       setState(() {
-        _errorMessage = 'Terjadi kesalahan: $e';
+        _errorMessage = 'Terjadi kesalahan saat menyimpan data: $e';
       });
     } finally {
       if (mounted) {

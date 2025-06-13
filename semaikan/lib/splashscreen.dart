@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:async'; // Untuk menggunakan Future.delayed
-import 'daftar_pengguna.dart';
+import 'dart:async';
+import 'Verifikasi Awal/daftar_pengguna.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../pesantren/home_p.dart';
-import '../ibu hamil/home_ih.dart';
+import '../Screen 2 User/home_general.dart';
 
 class LoginIPScreen extends StatefulWidget {
   final String userType; // 'hamil' atau 'sekolah'
@@ -46,30 +45,34 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
 
       // Jika autentikasi berhasil
       if (userCredential.user != null) {
-        // Verifikasi tipe user di Firestore
+        // Verifikasi account_category di Firestore
         try {
           DocumentSnapshot userDoc =
               await _firestore
-                  .collection('users')
+                  .collection('Account_Storage')
                   .doc(userCredential.user!.uid)
                   .get();
 
           if (userDoc.exists) {
-            String userTypeFromDB = userDoc.get('userType');
+            Map<String, dynamic> userData =
+                userDoc.data() as Map<String, dynamic>;
+            String accountCategory = userData['account_category'] ?? '';
 
-            // Cek apakah tipe user sesuai
-            if (userTypeFromDB == widget.userType) {
-              // Navigate ke halaman yang sesuai
+            // Cek apakah tipe user sesuai dengan yang dipilih
+            bool isValidUserType = false;
+            if (widget.userType == 'hamil' &&
+                accountCategory == 'ibu_hamil_balita') {
+              isValidUserType = true;
+            } else if (widget.userType == 'sekolah' &&
+                accountCategory == 'sekolah_pesantren') {
+              isValidUserType = true;
+            }
+
+            if (isValidUserType) {
               if (mounted) {
-                if (widget.userType == 'hamil') {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const HomePageIH()),
-                  );
-                } else if (widget.userType == 'sekolah') {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const HomePageP()),
-                  );
-                }
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const HomeGeneral()),
+                );
               }
             } else {
               // Logout jika tipe user tidak sesuai
@@ -80,31 +83,20 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
               });
             }
           } else {
-            // Jika data user tidak ditemukan di Firestore, tetap login tapi tanpa verifikasi
-            if (mounted) {
-              if (widget.userType == 'hamil') {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => const HomePageIH()),
-                );
-              } else if (widget.userType == 'sekolah') {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => const HomePageP()),
-                );
-              }
-            }
+            // Jika data user tidak ditemukan di Firestore
+            await _auth.signOut();
+            setState(() {
+              _errorMessage =
+                  'Data akun tidak ditemukan. Silakan daftar terlebih dahulu.';
+            });
           }
         } catch (firestoreError) {
-          // Jika ada error Firestore, tetap login tanpa verifikasi
+          print('Firestore error: $firestoreError');
+
           if (mounted) {
-            if (widget.userType == 'hamil') {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const HomePageIH()),
-              );
-            } else if (widget.userType == 'sekolah') {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const HomePageP()),
-              );
-            }
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const HomeGeneral()),
+            );
           }
         }
       }
@@ -119,6 +111,8 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
           _errorMessage = 'Format email tidak valid';
         } else if (e.code == 'too-many-requests') {
           _errorMessage = 'Terlalu banyak percobaan login. Coba lagi nanti';
+        } else if (e.code == 'invalid-credential') {
+          _errorMessage = 'Email atau kata sandi tidak valid';
         } else {
           _errorMessage = 'Terjadi kesalahan: ${e.message}';
         }
@@ -192,6 +186,7 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
                     child: Text(
                       _errorMessage!,
                       style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
                     ),
                   ),
 
@@ -286,7 +281,7 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
 
     showDialog(
       context: context,
-      barrierDismissible: false, // Tidak bisa ditutup dengan tap di luar
+      barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
@@ -366,10 +361,8 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
                               email: emailResetController.text.trim(),
                             );
 
-                            // Tutup dialog
                             Navigator.of(dialogContext).pop();
 
-                            // Tampilkan pesan sukses
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -429,7 +422,6 @@ class _LoginIPScreenState extends State<LoginIPScreen> {
                             }
                           }
                         } else {
-                          // Tampilkan error jika email kosong atau tidak valid
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Masukkan email yang valid'),

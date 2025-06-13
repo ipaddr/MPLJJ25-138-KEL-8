@@ -44,6 +44,12 @@ dependencies:
   printing: ^5.11.0 # Untuk fitur preview dan print
   path_provider: ^2.1.1 # Untuk akses direktori penyimpanan
   share_plus: ^7.2.1 # Untuk membagikan file
+  intl: ^0.18.1 
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.1
+  geocoding: ^2.1.1
+  geolocator: ^10.1.0
+  http: ^1.4.0
 
 dev_dependencies:
   flutter_test:
@@ -69,13 +75,13 @@ flutter:
   assets:
     - assets/splashscreen.png
     - assets/profile.jpg
-    - assets/img1.png
-    - assets/img2.png
-    - assets/img3.png
-    - assets/img4.png
-    - assets/img5.png
-    - assets/img6.png
-    - assets/img7.png
+    - assets/berhasil.png
+    - assets/tertunda.png
+    - assets/jumlah_penerima.png
+    - assets/gagal.png
+    - assets/pengajuan.png
+    - assets/progress.png
+    - assets/dikirim.png
 
   fonts:
     - family: Kalnia

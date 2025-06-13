@@ -12,8 +12,9 @@ Future<void> main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    print('✅ Firebase berhasil diinisialisasi');
   } catch (e) {
-    print('Error inisialisasi Firebase: $e');
+    print('❌ Error inisialisasi Firebase: $e');
     // Fallback jika file konfigurasi tidak ada atau terjadi kesalahan
     if (kIsWeb) {
       // Jika web, gunakan konfigurasi manual sementara (untuk development)
@@ -42,11 +43,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Pengajuan Bantuan App',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF626F47)),
+        fontFamily: 'Poppins', // Sesuai dengan theme app Anda
       ),
       home: const SplashScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

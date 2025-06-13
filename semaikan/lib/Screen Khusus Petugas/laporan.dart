@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:semaikan/maps.dart';
-import '../detail_laporan.dart'; // Import halaman detail laporan
-import '../ibu hamil/home_ih.dart';
-import '../ibu hamil/distribusi_ih.dart';
-import '../pengajuan.dart';
+import 'package:semaikan/Screen%20Bersama/maps.dart';
+import '../Screen Bersama/detail_laporan.dart'; // Import halaman detail laporan
+import 'home.dart';
+import 'distribusi.dart';
 
-class LaporanPageIH extends StatefulWidget {
-  const LaporanPageIH({super.key});
+class LaporanPage extends StatefulWidget {
+  const LaporanPage({super.key});
 
   @override
-  State<LaporanPageIH> createState() => _LaporanPageIHState();
+  State<LaporanPage> createState() => _LaporanPageState();
 }
 
-class _LaporanPageIHState extends State<LaporanPageIH> {
+class _LaporanPageState extends State<LaporanPage> {
   int _currentIndex = 3; // Index 3 untuk halaman laporan di bottom nav
   String _selectedFilter = 'Semua'; // Filter terpilih, default 'Semua'
 
@@ -23,8 +22,8 @@ class _LaporanPageIHState extends State<LaporanPageIH> {
   final List<Map<String, dynamic>> _allReports = [
     {
       'id': 'LP001',
-      'title': 'Laporan Posyandu Mawar',
-      'date': '29 April 2025',
+      'title': 'Laporan SMAN 1 Kota Padang',
+      'date': '22 April 2025',
       'status': 'Berhasil',
       'type': 'Sekolah',
       'jumlahMakanan': 250,
@@ -41,8 +40,8 @@ class _LaporanPageIHState extends State<LaporanPageIH> {
     },
     {
       'id': 'LP002',
-      'title': 'Laporan Posyandu Melati',
-      'date': '22 April 2025',
+      'title': 'Laporan Pesantren Nusa Bangsa',
+      'date': '18 April 2025',
       'status': 'Tertunda',
       'type': 'Pesantren',
       'jumlahMakanan': 300,
@@ -59,8 +58,8 @@ class _LaporanPageIHState extends State<LaporanPageIH> {
     },
     {
       'id': 'LP003',
-      'title': 'Laporan Posyandu Tulip',
-      'date': '16 April 2025',
+      'title': 'Laporan Ny. Siti Aisyah',
+      'date': '01 April 2025',
       'status': 'Berhasil',
       'type': 'Ibu Hamil',
       'jumlahMakanan': 50,
@@ -74,6 +73,61 @@ class _LaporanPageIHState extends State<LaporanPageIH> {
       'noTelepon': '081567890123',
       'keterangan':
           'Distribusi makanan khusus untuk ibu hamil telah dilaksanakan dengan baik. Menu disesuaikan dengan kebutuhan gizi ibu hamil. Setiap ibu hamil mendapat konsultasi gizi singkat dari petugas kesehatan.',
+    },
+    {
+      'id': 'LP004',
+      'title': 'Laporan Balita Siti Aminah',
+      'date': '23 Maret 2025',
+      'status': 'Gagal',
+      'type': 'Balita',
+      'jumlahMakanan': 100,
+      'jenisMakanan': 'MPASI dan Susu Formula',
+      'lokasi': 'Posyandu Melati',
+      'waktuDistribusi': '08:00 - 10:00',
+      'jumlahPenerima': 40,
+      'kategori': 'Balita 6-24 bulan',
+      'kondisiPenerima': 'Dalam pemantauan gizi',
+      'koordinator': 'Ibu Ani',
+      'noTelepon': '081345678901',
+      'keterangan':
+          'Distribusi tidak dapat dilaksanakan sepenuhnya karena kondisi cuaca buruk. Hanya 60% balita yang dapat hadir. Akan dijadwalkan ulang pada minggu depan.',
+      'alasanPenolakan': 'Distribusi terhambat cuaca dan tidak mencapai target',
+    },
+    {
+      'id': 'LP005',
+      'title': 'Laporan Pesantren Hati Ibu',
+      'date': '01 Maret 2025',
+      'status': 'Berhasil',
+      'type': 'Pesantren',
+      'jumlahMakanan': 400,
+      'jenisMakanan': 'Makanan Tradisional Halal',
+      'lokasi': 'Pesantren Hati Ibu',
+      'waktuDistribusi': '11:30 - 14:00',
+      'jumlahPenerima': 300,
+      'kategori': 'Santri',
+      'kondisiPenerima': 'Sehat dan aktif',
+      'koordinator': 'Kyai Abdullah',
+      'noTelepon': '081456789012',
+      'keterangan':
+          'Distribusi makanan tradisional untuk santri berjalan sangat baik. Menu terdiri dari nasi, sayur, lauk pauk, dan buah. Santri sangat menghargai bantuan yang diberikan.',
+    },
+    {
+      'id': 'LP006',
+      'title': 'Laporan Pesantren Hati Ibu',
+      'date': '01 Maret 2025',
+      'status': 'Tertunda',
+      'type': 'Pesantren',
+      'jumlahMakanan': 350,
+      'jenisMakanan': 'Makanan Sehat Bergizi',
+      'lokasi': 'Pesantren Hati Ibu (Cabang 2)',
+      'waktuDistribusi': '12:00 - 15:00',
+      'jumlahPenerima': 250,
+      'kategori': 'Santri',
+      'kondisiPenerima': 'Sehat',
+      'koordinator': 'Ustadz Ahmad',
+      'noTelepon': '081678901234',
+      'keterangan':
+          'Persiapan distribusi untuk cabang kedua pesantren. Koordinasi dengan pengurus sedang berlangsung.',
     },
   ];
 
@@ -321,9 +375,8 @@ class _LaporanPageIHState extends State<LaporanPageIH> {
         children: [
           _buildNavItem(Icons.home, 'Home', 0),
           _buildNavItem(Icons.menu_book, 'Distribusi', 1),
-          _buildNavItem(Icons.add, 'Pengajuan', 2),
-          _buildNavItem(Icons.map, 'Maps', 3),
-          _buildNavItem(Icons.assignment, 'Laporan', 4),
+          _buildNavItem(Icons.map, 'Maps', 2),
+          _buildNavItem(Icons.assignment, 'Laporan', 3),
         ],
       ),
     );
@@ -344,18 +397,13 @@ class _LaporanPageIHState extends State<LaporanPageIH> {
           // Menu Home
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const HomePageIH()),
+            MaterialPageRoute(builder: (context) => const HomePage()),
           );
         } else if (index == 1) {
           // Menu Laporan
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const DistribusiPageIH()),
-          );
-        } else if (index == 2) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const PengajuanPage()),
+            MaterialPageRoute(builder: (context) => const DistribusiPage()),
           );
         } else if (index == 2) {
           // Menu Laporan
@@ -367,7 +415,7 @@ class _LaporanPageIHState extends State<LaporanPageIH> {
           // Menu Laporan
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const LaporanPageIH()),
+            MaterialPageRoute(builder: (context) => const LaporanPage()),
           );
         }
       },
