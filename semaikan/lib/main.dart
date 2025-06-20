@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Pengajuan Bantuan App',
+      title: 'Semaikan',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF626F47)),
         fontFamily: 'Poppins', // Sesuai dengan theme app Anda

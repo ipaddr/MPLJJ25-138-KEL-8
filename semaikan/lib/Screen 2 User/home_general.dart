@@ -22,10 +22,9 @@ class _HomeGeneralState extends State<HomeGeneral> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   String _userName = "Pengguna";
-  String _accountCategory = "";
   String _profilePicture = "";
-  List<Map<String, dynamic>> _userData = [];
   List<Map<String, dynamic>> _pengajuanData = []; // Data pengajuan untuk badge
+  List<Map<String, dynamic>> _recentNotifications = []; // Notifikasi terbaru
   bool _isLoading = true;
   int _currentIndex = 0;
 
@@ -37,8 +36,261 @@ class _HomeGeneralState extends State<HomeGeneral> {
   @override
   void initState() {
     super.initState();
-    _getUserData();
-    _loadPengajuanData(); // Load data pengajuan untuk badges
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    await Future.wait([
+      _getUserData(),
+      _loadPengajuanData(),
+      _loadRecentNotifications(),
+    ]);
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  // Load notifikasi terbaru (3 teratas)
+  Future<void> _loadRecentNotifications() async {
+    try {
+      List<Map<String, dynamic>> notifications = [];
+
+      // Load pengumuman dari petugas
+      await _loadPengumumanNotifications(notifications);
+
+      // Load notifikasi laporan pengguna
+      await _loadLaporanNotifications(notifications);
+
+      // Sort berdasarkan tanggal terbaru dan ambil 3 teratas
+      notifications.sort((a, b) {
+        final dateA = a['sort_date'] as DateTime;
+        final dateB = b['sort_date'] as DateTime;
+        return dateB.compareTo(dateA);
+      });
+
+      setState(() {
+        _recentNotifications = notifications.take(5).toList();
+      });
+    } catch (e) {
+      print('Error loading recent notifications: $e');
+      setState(() {
+        _recentNotifications = [];
+      });
+    }
+  }
+
+  Future<void> _loadPengumumanNotifications(
+    List<Map<String, dynamic>> notifications,
+  ) async {
+    try {
+      final doc =
+          await _firestore
+              .collection('System_Data')
+              .doc('notifikasi_user')
+              .get();
+
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+
+        data.forEach((key, value) {
+          if (value is Map<String, dynamic>) {
+            final pengumuman = value['pengumuman']?.toString() ?? '';
+            final tanggalDibuat = value['tanggal_dibuat']?.toString() ?? '';
+
+            if (pengumuman.isNotEmpty && tanggalDibuat.isNotEmpty) {
+              final parsedDate = _parseWaktuString(tanggalDibuat);
+              if (parsedDate != null) {
+                // Cek apakah notifikasi masih dalam 1 bulan
+                final now = DateTime.now();
+                final oneMonthAgo = DateTime(now.year, now.month - 1, now.day);
+
+                if (parsedDate.isAfter(oneMonthAgo)) {
+                  notifications.add({
+                    'type': 'pengumuman',
+                    'title': 'Informasi Penting!',
+                    'content': pengumuman,
+                    'date_string': tanggalDibuat,
+                    'sort_date': parsedDate,
+                    'formatted_date': _formatTanggalIndonesia(tanggalDibuat),
+                  });
+                }
+              }
+            }
+          }
+        });
+      }
+    } catch (e) {
+      print('Error loading pengumuman notifications: $e');
+    }
+  }
+
+  Future<void> _loadLaporanNotifications(
+    List<Map<String, dynamic>> notifications,
+  ) async {
+    try {
+      final User? user = _auth.currentUser;
+      if (user != null) {
+        final querySnapshot =
+            await _firestore
+                .collection('Account_Storage')
+                .doc(user.uid)
+                .collection('Data_Pengajuan')
+                .get();
+
+        for (var doc in querySnapshot.docs) {
+          final data = doc.data();
+          final progress = data['progress']?.toString() ?? '';
+          final waktuProgress = data['waktu_progress'] as Map<String, dynamic>?;
+
+          if (waktuProgress != null) {
+            // Cek progress yang ingin ditampilkan
+            if ([
+              'Disetujui',
+              'Dikirim',
+              'Selesai',
+              'Gagal',
+              'Ditolak',
+            ].contains(progress)) {
+              String? dateString;
+              String title = '';
+              String content = '';
+
+              // Ambil tanggal berdasarkan progress
+              switch (progress) {
+                case 'Disetujui':
+                  dateString = waktuProgress['Disetujui']?.toString();
+                  title = 'Laporan Pengajuan Disetujui.';
+                  break;
+                case 'Dikirim':
+                  dateString = waktuProgress['Dikirim']?.toString();
+                  title = 'Laporan Pengajuan Dikirim.';
+                  break;
+                case 'Selesai':
+                  dateString = waktuProgress['Selesai']?.toString();
+                  title = 'Laporan Pengajuan Selesai.';
+                  break;
+                case 'Gagal':
+                  dateString = waktuProgress['Gagal']?.toString();
+                  title = 'Laporan Pengajuan Gagal.';
+                  break;
+                case 'Ditolak':
+                  dateString = waktuProgress['Ditolak']?.toString();
+                  title = 'Laporan Pengajuan Ditolak.';
+                  break;
+              }
+
+              if (dateString != null && dateString.isNotEmpty) {
+                final parsedDate = _parseWaktuString(dateString);
+                if (parsedDate != null) {
+                  // Cek apakah notifikasi masih dalam 1 bulan
+                  final now = DateTime.now();
+                  final oneMonthAgo = DateTime(
+                    now.year,
+                    now.month - 1,
+                    now.day,
+                  );
+
+                  if (parsedDate.isAfter(oneMonthAgo)) {
+                    final formattedDate = _formatTanggalIndonesia(dateString);
+
+                    // Buat content berdasarkan progress
+                    switch (progress) {
+                      case 'Disetujui':
+                        content =
+                            'Laporan pengajuan pada tanggal $formattedDate telah disetujui.';
+                        break;
+                      case 'Dikirim':
+                        content =
+                            'Laporan pengajuan pada tanggal $formattedDate telah dikirim.';
+                        break;
+                      case 'Selesai':
+                        content =
+                            'Laporan pengajuan pada tanggal $formattedDate telah selesai.';
+                        break;
+                      case 'Gagal':
+                        content =
+                            'Laporan pengajuan pada tanggal $formattedDate mengalami kegagalan.';
+                        break;
+                      case 'Ditolak':
+                        content =
+                            'Laporan pengajuan pada tanggal $formattedDate telah ditolak.';
+                        break;
+                    }
+
+                    notifications.add({
+                      'type': 'laporan',
+                      'title': title,
+                      'content': content,
+                      'date_string': dateString,
+                      'sort_date': parsedDate,
+                      'formatted_date': formattedDate,
+                      'progress': progress,
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Error loading laporan notifications: $e');
+    }
+  }
+
+  DateTime? _parseWaktuString(String waktuString) {
+    try {
+      // Format: "15/06/2025 14:30 WIB"
+      final parts = waktuString.split(' ');
+      if (parts.length >= 2) {
+        final datePart = parts[0]; // "15/06/2025"
+        final timePart = parts[1]; // "14:30"
+
+        final dateComponents = datePart.split('/');
+        final timeComponents = timePart.split(':');
+
+        if (dateComponents.length == 3 && timeComponents.length == 2) {
+          final day = int.parse(dateComponents[0]);
+          final month = int.parse(dateComponents[1]);
+          final year = int.parse(dateComponents[2]);
+          final hour = int.parse(timeComponents[0]);
+          final minute = int.parse(timeComponents[1]);
+
+          return DateTime(year, month, day, hour, minute);
+        }
+      }
+    } catch (e) {
+      print('Error parsing waktu string: $e');
+    }
+    return null;
+  }
+
+  String _formatTanggalIndonesia(String waktuString) {
+    try {
+      final dateTime = _parseWaktuString(waktuString);
+      if (dateTime != null) {
+        final months = [
+          '',
+          'Januari',
+          'Februari',
+          'Maret',
+          'April',
+          'Mei',
+          'Juni',
+          'Juli',
+          'Agustus',
+          'September',
+          'Oktober',
+          'November',
+          'Desember',
+        ];
+
+        return '${dateTime.day} ${months[dateTime.month]} ${dateTime.year}';
+      }
+    } catch (e) {
+      print('Error formatting tanggal Indonesia: $e');
+    }
+    return waktuString;
   }
 
   // Parse format tanggal Indonesia: "11/06/2025 21:34 WIB"
@@ -156,11 +408,9 @@ class _HomeGeneralState extends State<HomeGeneral> {
           break;
         case 'disetujui':
         case 'menunggu dikirim':
-        case 'dikirim':
           _prosesCount++;
           break;
-        case 'selesai':
-        case 'gagal':
+        case 'dikirim':
           _dikirimCount++;
           break;
       }
@@ -181,20 +431,11 @@ class _HomeGeneralState extends State<HomeGeneral> {
               userDoc.data() as Map<String, dynamic>;
 
           setState(() {
-            _accountCategory = userData['account_category']?.toString() ?? '';
             _profilePicture = userData['profile_picture']?.toString() ?? '';
-            // Set nama berdasarkan kategori akun
-            if (_accountCategory == 'ibu_hamil_balita') {
-              _userName =
-                  userData['nama_lengkap']?.toString() ??
-                  user.email?.split('@')[0] ??
-                  'Ibu Hamil';
-            } else if (_accountCategory == 'sekolah_pesantren') {
-              _userName =
-                  userData['nama_sekolah']?.toString() ??
-                  user.email?.split('@')[0] ??
-                  'Sekolah';
-            }
+            _userName =
+                userData['nama_lengkap']?.toString() ??
+                user.email?.split('@')[0] ??
+                'User';
           });
 
           // Ambil data dari subcollection data_user
@@ -203,62 +444,41 @@ class _HomeGeneralState extends State<HomeGeneral> {
       }
     } catch (e) {
       print('Error getting user data: $e');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
   // Mendapatkan data dari subcollection data_user
   Future<void> _getUserSubcollectionData(String userId) async {
     try {
-      QuerySnapshot dataSnapshot =
-          await _firestore
-              .collection('Account_Storage')
-              .doc(userId)
-              .collection('data_user')
-              .orderBy('timestamp', descending: true)
-              .get();
-
-      setState(() {
-        _userData =
-            dataSnapshot.docs.map((doc) {
-              Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-              data['id'] = doc.id;
-              return data;
-            }).toList();
-      });
+      setState(() {});
     } catch (e) {
       print('Error getting user subcollection data: $e');
-      setState(() {
-        _userData = [];
-      });
+      setState(() {});
     }
   }
 
   // Mendapatkan greeting message
   String _getGreetingMessage() {
-    return 'Laporan Pengajuan Distribusi yang kamu ajukan telah dikonfirmasi, jangan lewatkan tanggalnya!';
+    return 'Selamat datang di Semaikan! Aplikasi distribusi makanan yang membantu Anda mengajukan bantuan pangan dan memantau status distribusi secara real-time.';
   }
 
   // Mendapatkan status items dengan badge counts
   List<Map<String, dynamic>> _getStatusItems() {
     return [
       {
-        'image': 'pengajuan.png',
+        'image': 'assets/pengajuan.png', // ✅ Tambahkan 'assets/'
         'label': 'Pengajuan',
         'color': const Color(0xFF626F47),
         'count': _pengajuanCount,
       },
       {
-        'image': 'progress.png',
+        'image': 'assets/progress.png', // ✅ Tambahkan 'assets/'
         'label': 'Proses',
         'color': const Color(0xFF626F47),
         'count': _prosesCount,
       },
       {
-        'image': 'dikirim.png',
+        'image': 'assets/dikirim.png', // ✅ Tambahkan 'assets/'
         'label': 'Dikirim',
         'color': const Color(0xFF626F47),
         'count': _dikirimCount,
@@ -278,7 +498,10 @@ class _HomeGeneralState extends State<HomeGeneral> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const NotifikasiPageIP()),
-    );
+    ).then((_) {
+      // Refresh notifications when returning
+      _loadRecentNotifications();
+    });
   }
 
   // Handle bottom navigation - Clean and simple
@@ -334,7 +557,7 @@ class _HomeGeneralState extends State<HomeGeneral> {
       ),
       child: ClipOval(
         child:
-            (_profilePicture.isEmpty || _profilePicture == null)
+            (_profilePicture.isEmpty)
                 ? Image.asset(
                   'assets/profile.jpg',
                   width: 40,
@@ -495,6 +718,7 @@ class _HomeGeneralState extends State<HomeGeneral> {
     );
   }
 
+  // SOLUSI 2: Sama untuk _buildStatusCard()
   Widget _buildStatusCard() {
     List<Map<String, dynamic>> statusItems = _getStatusItems();
 
@@ -510,14 +734,19 @@ class _HomeGeneralState extends State<HomeGeneral> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Status Distribusi',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF626F47),
+              // ✅ Wrap dengan Expanded
+              const Expanded(
+                child: Text(
+                  'Status Distribusi',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF626F47),
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
+              // ✅ Button yang lebih compact
               ElevatedButton(
                 onPressed: _navigateToStatusPage,
                 style: ElevatedButton.styleFrom(
@@ -525,16 +754,24 @@ class _HomeGeneralState extends State<HomeGeneral> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 child: const Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Lihat Semua',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF626F47)),
+                      'Semua',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF626F47)),
                     ),
+                    SizedBox(width: 2),
                     Icon(
                       Icons.arrow_forward,
-                      size: 14,
+                      size: 12,
                       color: Color(0xFF626F47),
                     ),
                   ],
@@ -637,14 +874,19 @@ class _HomeGeneralState extends State<HomeGeneral> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Riwayat Pemberitahuan',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF626F47),
+              // ✅ Wrap dengan Expanded untuk memberi ruang fleksibel
+              const Expanded(
+                child: Text(
+                  'Riwayat Pemberitahuan',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF626F47),
+                  ),
                 ),
               ),
+              const SizedBox(width: 8), // Beri jarak minimum
+              // ✅ Button yang lebih compact
               ElevatedButton(
                 onPressed: _navigateToDataManagement,
                 style: ElevatedButton.styleFrom(
@@ -652,16 +894,24 @@ class _HomeGeneralState extends State<HomeGeneral> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  minimumSize: Size.zero, // Hilangkan minimum size
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 child: const Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Lihat Semua',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF626F47)),
+                      'Semua',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF626F47)),
                     ),
+                    SizedBox(width: 2),
                     Icon(
                       Icons.arrow_forward,
-                      size: 14,
+                      size: 12,
                       color: Color(0xFF626F47),
                     ),
                   ],
@@ -670,9 +920,111 @@ class _HomeGeneralState extends State<HomeGeneral> {
             ],
           ),
           const SizedBox(height: 16),
-          _userData.isEmpty
+          _recentNotifications.isEmpty
               ? _buildDefaultNotificationItems()
-              : _buildDataList(),
+              : _buildRealNotificationList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRealNotificationList() {
+    return Column(
+      children: [
+        ...List.generate(_recentNotifications.length, (index) {
+          final notification = _recentNotifications[index];
+          return Column(
+            children: [
+              _buildRealNotificationItem(notification),
+              if (index < _recentNotifications.length - 1)
+                const Divider(color: Color(0xFF8F8962), height: 1),
+            ],
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildRealNotificationItem(Map<String, dynamic> notification) {
+    final type = notification['type'] as String;
+    final title = notification['title'] as String;
+    final content = notification['content'] as String;
+
+    // Icon berdasarkan tipe notifikasi
+    IconData iconData;
+    Color iconColor;
+
+    if (type == 'pengumuman') {
+      iconData = Icons.campaign;
+      iconColor = const Color(0xFF626F47);
+    } else {
+      // Icon berdasarkan progress laporan
+      final progress = notification['progress'] as String?;
+      switch (progress) {
+        case 'Disetujui':
+          iconData = Icons.check_circle_outline;
+          iconColor = Colors.blue;
+          break;
+        case 'Dikirim':
+          iconData = Icons.local_shipping;
+          iconColor = Colors.purple;
+          break;
+        case 'Selesai':
+          iconData = Icons.task_alt;
+          iconColor = Colors.green;
+          break;
+        case 'Gagal':
+          iconData = Icons.error_outline;
+          iconColor = Colors.red;
+          break;
+        case 'Ditolak':
+          iconData = Icons.block;
+          iconColor = Colors.red[800]!;
+          break;
+        default:
+          iconData = Icons.description_outlined;
+          iconColor = const Color(0xFF626F47);
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFFECE8C8),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(iconData, color: iconColor, size: 24),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF626F47),
+                  ),
+                ),
+                Text(
+                  content,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF626F47),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -741,66 +1093,6 @@ class _HomeGeneralState extends State<HomeGeneral> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDataList() {
-    return Column(
-      children: _userData.take(3).map((data) => _buildDataItem(data)).toList(),
-    );
-  }
-
-  Widget _buildDataItem(Map<String, dynamic> data) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFECE8C8),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF626F47),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.health_and_safety,
-                color: Color(0xFFF9F3D1),
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data['title']?.toString() ?? 'Informasi Penting..',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF626F47),
-                    ),
-                  ),
-                  Text(
-                    data['description']?.toString() ??
-                        'Bantuan akan didistribusikan pada 6 Mei 2025...',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF626F47),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

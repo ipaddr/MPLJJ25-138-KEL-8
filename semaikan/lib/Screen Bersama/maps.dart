@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // ✅ Tambahkan import FirebaseAuth
+import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/floating_bottom_navbar.dart';
 import '../widgets/petugas_navbar.dart';
 import 'package:semaikan/screen 2 user/distribusi.dart';
 import 'package:semaikan/screen 2 user/pengajuan.dart';
 import 'package:semaikan/screen 2 user/laporan.dart';
 import 'package:semaikan/screen 2 user/home_general.dart';
+import 'package:semaikan/Screen%20Khusus%20Petugas/home.dart';
+import 'package:semaikan/Screen%20Khusus%20Petugas/distribusi.dart';
+import 'package:semaikan/Screen%20Khusus%20Petugas/laporan.dart';
 
 class MapsPage extends StatefulWidget {
-  final String? accountCategory; // ✅ Parameter untuk account category
+  final String? accountCategory; // Parameter untuk account category
 
   const MapsPage({super.key, this.accountCategory});
 
@@ -21,12 +24,12 @@ class MapsPage extends StatefulWidget {
 
 class _MapsPageState extends State<MapsPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance; // ✅ Tambahkan FirebaseAuth
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   List<Marker> _markers = [];
   bool _isLoading = true;
-  int _currentIndex = 2; // ✅ Default ke index 2 untuk petugas
+  int _currentIndex = 2; // Default ke index 2 untuk petugas
   String _accountCategory =
-      'petugas_distribusi'; // ✅ Default ke petugas untuk avoid flash
+      'petugas_distribusi'; // Default ke petugas untuk avoid flash
 
   // Default center koordinat (Padang, Sumatera Barat)
   LatLng _center = const LatLng(-0.9492, 100.3543);
@@ -38,7 +41,7 @@ class _MapsPageState extends State<MapsPage> {
     _loadDistributionMarkers();
   }
 
-  // ✅ Method untuk initialize account category dengan fallback
+  // Method untuk initialize account category dengan fallback
   Future<void> _initializeAccountCategory() async {
     // Jika ada parameter, gunakan parameter
     if (widget.accountCategory != null && widget.accountCategory!.isNotEmpty) {
@@ -53,14 +56,14 @@ class _MapsPageState extends State<MapsPage> {
       await _getAccountCategoryFromFirestore();
     }
 
-    // ✅ Trim dan debug string comparison
+    // Trim dan debug string comparison
     _accountCategory = _accountCategory.trim();
     print('MapsPage - Final accountCategory: "$_accountCategory"');
     print(
       'MapsPage - Comparison result: ${_accountCategory == "petugas_distribusi"}',
     );
 
-    // ✅ Set currentIndex berdasarkan account category
+    // Set currentIndex berdasarkan account category
     if (_accountCategory == 'petugas_distribusi') {
       setState(() {
         _currentIndex = 2; // Maps index untuk petugas (4 tombol)
@@ -76,7 +79,7 @@ class _MapsPageState extends State<MapsPage> {
     }
   }
 
-  // ✅ Method untuk mengambil account category dari Firestore
+  // Method untuk mengambil account category dari Firestore
   Future<void> _getAccountCategoryFromFirestore() async {
     try {
       final User? user = _auth.currentUser;
@@ -173,8 +176,8 @@ class _MapsPageState extends State<MapsPage> {
               // Buat marker untuk setiap lokasi
               Marker marker = Marker(
                 point: coordinate,
-                width: 80, // ✅ Increase width untuk marker
-                height: 80, // ✅ Increase height untuk marker
+                width: 80,
+                height: 80,
                 child: GestureDetector(
                   onTap:
                       () => _showMarkerInfo(
@@ -186,10 +189,9 @@ class _MapsPageState extends State<MapsPage> {
                     width: 80,
                     height: 80,
                     child: Column(
-                      mainAxisSize: MainAxisSize.min, // ✅ Tambahkan constraint
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Flexible(
-                          // ✅ Wrap Container dengan Flexible
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 6,
@@ -211,13 +213,12 @@ class _MapsPageState extends State<MapsPage> {
                               _formatRegionalName(fieldName),
                               style: const TextStyle(
                                 color: Color(0xFFF9F3D1),
-                                fontSize: 8, // ✅ Reduce font size
+                                fontSize: 8,
                                 fontWeight: FontWeight.bold,
                               ),
                               textAlign: TextAlign.center,
-                              maxLines: 2, // ✅ Limit lines
-                              overflow:
-                                  TextOverflow.ellipsis, // ✅ Handle overflow
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
@@ -377,7 +378,7 @@ class _MapsPageState extends State<MapsPage> {
     );
   }
 
-  // ✅ Handle bottom navigation berdasarkan account category
+  // Handle bottom navigation berdasarkan account category
   void _handleBottomNavigation(int index) {
     if (_currentIndex == index) {
       return; // Hindari navigasi ke halaman yang sama
@@ -387,50 +388,66 @@ class _MapsPageState extends State<MapsPage> {
       _currentIndex = index;
     });
 
-    // ✅ Navigasi berdasarkan account category dan index
+    // Navigasi berdasarkan account category dan index
     if (_accountCategory == 'petugas_distribusi') {
-      // Navigasi untuk petugas distribusi (4 tombol: Home, Distribusi, Maps, Laporan)
+      // Navigasi untuk petugas distribusi - menggunakan Screen Khusus Petugas
       switch (index) {
         case 0:
-          // Kembali ke HomePage petugas
-          Navigator.pop(context);
+          // Home Page Petugas
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const HomePage(),
+            ), // dari Screen Khusus Petugas
+          );
           break;
         case 1:
           // Distribusi Page Petugas
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const DistribusiPageIH()),
+            MaterialPageRoute(
+              builder: (context) => const DistribusiPage(),
+            ), // dari Screen Khusus Petugas
           );
           break;
         case 2:
           // Already on Maps
           break;
         case 3:
+          // Laporan Page Petugas
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const LaporanPageIH()),
+            MaterialPageRoute(
+              builder: (context) => const LaporanPage(),
+            ), // dari Screen Khusus Petugas
           );
           break;
       }
     } else {
-      // Navigasi untuk user biasa (5 tombol dengan floating center)
+      // Navigasi untuk user biasa - menggunakan screen 2 user
       switch (index) {
         case 0:
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const HomeGeneral()),
+            MaterialPageRoute(
+              builder: (context) => const HomeGeneral(),
+            ), // dari screen 2 user
           );
           break;
         case 1:
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const DistribusiPageIH()),
+            MaterialPageRoute(
+              builder: (context) => const DistribusiPageIH(),
+            ), // dari screen 2 user
           );
           break;
         case 2:
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => DaftarPengajuanPage()),
+            MaterialPageRoute(
+              builder: (context) => DaftarPengajuanPage(),
+            ), // dari screen 2 user
           );
           break;
         case 3:
@@ -439,7 +456,9 @@ class _MapsPageState extends State<MapsPage> {
         case 4:
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const LaporanPageIH()),
+            MaterialPageRoute(
+              builder: (context) => const LaporanPageIH(),
+            ), // dari screen 2 user
           );
           break;
       }
@@ -604,7 +623,7 @@ class _MapsPageState extends State<MapsPage> {
           ],
         ),
       ),
-      // ✅ Navbar berdasarkan account category dengan setState untuk ensure re-render
+      // Navbar berdasarkan account category
       bottomNavigationBar: Builder(
         builder: (context) {
           print(

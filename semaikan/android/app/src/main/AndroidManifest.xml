@@ -1,4 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- USES-PERMISSION dipindahkan ke sini (langsung di bawah manifest) -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+                android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
+                android:maxSdkVersion="32" />
+
     <application
         android:label="semaikan"
         android:name="${applicationName}"
@@ -20,6 +27,7 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- USES-PERMISSION sudah dipindahkan ke atas, hapus dari sini -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

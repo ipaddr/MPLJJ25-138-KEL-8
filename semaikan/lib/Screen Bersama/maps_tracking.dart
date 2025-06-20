@@ -6,7 +6,11 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:math' as math;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:semaikan/screen 2 user/distribusi.dart';
+import 'package:semaikan/Screen%20Khusus%20Petugas/distribusi.dart'
+    as PetugasDistribusi;
+import 'ai_route_service.dart';
 
 class MapsTrackingPage extends StatefulWidget {
   final String userUid;
@@ -26,10 +30,12 @@ class MapsTrackingPage extends StatefulWidget {
 
 class _MapsTrackingPageState extends State<MapsTrackingPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final MapController _mapController = MapController();
 
   bool _isLoading = true;
   String _errorMessage = '';
+  String _accountCategory = ''; // Track account category
 
   // Data tracking
   String _progress = '';
@@ -43,9 +49,13 @@ class _MapsTrackingPageState extends State<MapsTrackingPage> {
   List<LatLng> _routePoints = [];
   List<LatLng> _completedRoutePoints = [];
   List<LatLng> _remainingRoutePoints = [];
-  List<TrackingStep> _trackingSteps = [];
+  final List<TrackingStep> _trackingSteps = [];
   double _totalDistance = 0.0;
-  double _completedDistance = 0.0;
+
+  // ===== TAMBAHAN VARIABEL UNTUK AI =====
+  bool _useAIOptimization = true; // ← TAMBAH INI
+  AIRouteResult? _aiRouteResult; // ← TAMBAH INI
+  String _aiStatus = ''; // ← TAMBAH INI
 
   // Static caching untuk route data
   static final Map<String, List<LatLng>> _routeCache = {};
@@ -56,7 +66,66 @@ class _MapsTrackingPageState extends State<MapsTrackingPage> {
   @override
   void initState() {
     super.initState();
+    _loadAccountCategory();
     _loadTrackingData();
+  }
+
+  // Load account category dari current user
+  Future<void> _loadAccountCategory() async {
+    try {
+      final User? user = _auth.currentUser;
+      if (user != null) {
+        print(
+          'MapsTrackingPage - Loading account category for UID: ${user.uid}',
+        );
+
+        DocumentSnapshot userDoc =
+            await _firestore.collection('Account_Storage').doc(user.uid).get();
+
+        if (userDoc.exists) {
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
+          setState(() {
+            _accountCategory = userData['account_category']?.toString() ?? '';
+          });
+          print('MapsTrackingPage - Account Category: "$_accountCategory"');
+        } else {
+          print('MapsTrackingPage - User document not found');
+          setState(() {
+            _accountCategory = '';
+          });
+        }
+      } else {
+        print('MapsTrackingPage - No current user');
+        setState(() {
+          _accountCategory = '';
+        });
+      }
+    } catch (e) {
+      print('MapsTrackingPage - Error loading account category: $e');
+      setState(() {
+        _accountCategory = '';
+      });
+    }
+  }
+
+  // Navigate back berdasarkan account category
+  void _navigateBack() {
+    if (_accountCategory.trim() == 'petugas_distribusi') {
+      print('MapsTrackingPage - Navigating back to Petugas Distribusi');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PetugasDistribusi.DistribusiPage(),
+        ),
+      );
+    } else {
+      print('MapsTrackingPage - Navigating back to User Distribusi');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const DistribusiPageIH()),
+      );
+    }
   }
 
   // Load data tracking dari Firestore
@@ -141,8 +210,8 @@ class _MapsTrackingPageState extends State<MapsTrackingPage> {
         return;
       }
 
-      // Generate route menggunakan OpenRouteService dan GraphHopper
-      await _generateRoutePointsWithAdvancedAPI();
+      // ===== GANTI: Generate route menggunakan AI atau traditional API =====
+      await _generateRoutePointsWithAI();
 
       _generateTrackingSteps(pengajuanData);
 
@@ -158,6 +227,313 @@ class _MapsTrackingPageState extends State<MapsTrackingPage> {
         _isLoading = false;
       });
     }
+  }
+
+  // ===== GANTI METHOD: _generateRoutePointsWithAdvancedAPI =====
+  Future<void> _generateRoutePointsWithAI() async {
+    if (_sourceLocation != null && _destinationLocation != null) {
+      print('🗺️  Generating route with AI optimization...');
+
+      setState(() {
+        _aiStatus = '🤖 AI sedang menganalisis rute optimal...';
+      });
+
+      if (_useAIOptimization) {
+        // ===== GUNAKAN AI ROUTE SERVICE =====
+        try {
+          _aiRouteResult = await AIRouteService.getOptimalRoute(
+            start: _sourceLocation!,
+            destination: _destinationLocation!,
+            departureTime: DateTime.now(),
+          );
+
+          if (_aiRouteResult != null) {
+            // Update route points dengan hasil AI
+            _routePoints = _aiRouteResult!.bestRoute.points;
+            _totalDistance = _aiRouteResult!.bestRoute.distance;
+
+            setState(() {
+              _aiStatus =
+                  '✅ AI: ${_aiRouteResult!.bestRoute.name} selected (${(_aiRouteResult!.confidence * 100).toStringAsFixed(1)}% confidence)';
+            });
+
+            print('✅ AI Route selected: ${_aiRouteResult!.bestRoute.name}');
+            print(
+              '🎯 Confidence: ${(_aiRouteResult!.confidence * 100).toStringAsFixed(1)}%',
+            );
+            print(
+              '📊 Distance: ${(_totalDistance / 1000).toStringAsFixed(1)} km',
+            );
+
+            // Show AI analysis (optional - akan muncul setelah 2 detik)
+            Future.delayed(Duration(seconds: 2), () {
+              if (mounted) _showAIAnalysis();
+            });
+          } else {
+            // Fallback ke method lama jika AI gagal
+            await _generateRoutePointsWithTraditionalAPI();
+          }
+        } catch (e) {
+          print('❌ AI Route failed: $e');
+          setState(() {
+            _aiStatus = '⚠️ AI gagal, menggunakan routing biasa...';
+          });
+          await _generateRoutePointsWithTraditionalAPI();
+        }
+      } else {
+        await _generateRoutePointsWithTraditionalAPI();
+      }
+
+      // Update visualization berdasarkan progress
+      _updateRouteVisualization();
+    }
+  }
+
+  // ===== TAMBAH METHOD: Fallback ke traditional API =====
+  Future<void> _generateRoutePointsWithTraditionalAPI() async {
+    // Copy semua kode dari method _generateRoutePointsWithAdvancedAPI yang LAMA
+    _routePoints = await _getAdvancedRouting(
+      _sourceLocation!,
+      _destinationLocation!,
+    );
+
+    setState(() {
+      _aiStatus = '📍 Menggunakan routing API tradisional';
+    });
+
+    print(
+      '✅ Traditional route generated: ${_routePoints.length} points, ${(_totalDistance / 1000).toStringAsFixed(1)} km',
+    );
+  }
+
+  // ===== TAMBAH METHOD: Update route visualization =====
+  void _updateRouteVisualization() {
+    switch (_progress.toLowerCase()) {
+      case 'dikirim':
+        double progressPercentage = _calculateProgressPercentage();
+        int completedIndex = (_routePoints.length * progressPercentage).floor();
+
+        _completedRoutePoints = _routePoints.sublist(0, completedIndex + 1);
+        _remainingRoutePoints = _routePoints.sublist(completedIndex);
+
+        if (completedIndex < _routePoints.length) {
+          _truckLocation = _routePoints[completedIndex];
+        }
+        break;
+
+      case 'selesai':
+        _completedRoutePoints = _routePoints;
+        _remainingRoutePoints = [];
+        _truckLocation = null;
+        break;
+
+      case 'gagal':
+        double failedProgressPercentage = 0.7;
+        int failedIndex =
+            (_routePoints.length * failedProgressPercentage).floor();
+
+        _completedRoutePoints = _routePoints.sublist(0, failedIndex + 1);
+        _remainingRoutePoints = _routePoints.sublist(failedIndex);
+        _truckLocation = _routePoints[failedIndex];
+        break;
+
+      default:
+        _completedRoutePoints = [];
+        _remainingRoutePoints = _routePoints;
+        _truckLocation = null;
+        break;
+    }
+  }
+
+  // ===== TAMBAH METHOD: Show AI analysis =====
+  void _showAIAnalysis() {
+    if (_aiRouteResult == null || !mounted) return;
+
+    // Show bottom sheet dengan AI info
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => Container(
+            margin: EdgeInsets.all(16),
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.psychology,
+                        color: Colors.green,
+                        size: 24,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'AI Route Analysis',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(Icons.close, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+
+                _buildAnalysisItem(
+                  'Selected Route',
+                  _aiRouteResult!.bestRoute.name,
+                  Icons.route,
+                ),
+                _buildAnalysisItem(
+                  'Distance',
+                  '${(_aiRouteResult!.bestRoute.distance / 1000).toStringAsFixed(1)} km',
+                  Icons.straighten,
+                ),
+                _buildAnalysisItem(
+                  'Estimated Time',
+                  '${(_aiRouteResult!.bestRoute.estimatedTime / 60).toStringAsFixed(0)} minutes',
+                  Icons.schedule,
+                ),
+                _buildAnalysisItem(
+                  'AI Confidence',
+                  '${(_aiRouteResult!.confidence * 100).toStringAsFixed(1)}%',
+                  Icons.verified,
+                ),
+
+                SizedBox(height: 16),
+                Text(
+                  'AI Reasoning:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  _aiRouteResult!.reasoning,
+                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                ),
+
+                if (_aiRouteResult!.allRoutes.length > 1) ...[
+                  SizedBox(height: 16),
+                  Text(
+                    'Alternative Routes:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  SizedBox(height: 8),
+                  ..._aiRouteResult!.allRoutes
+                      .take(3)
+                      .map(
+                        (route) => Container(
+                          margin: EdgeInsets.only(bottom: 4),
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color:
+                                route == _aiRouteResult!.bestRoute
+                                    ? Colors.green.withOpacity(0.1)
+                                    : Colors.grey.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                route == _aiRouteResult!.bestRoute
+                                    ? Icons.star
+                                    : Icons.route,
+                                size: 16,
+                                color:
+                                    route == _aiRouteResult!.bestRoute
+                                        ? Colors.amber
+                                        : Colors.grey,
+                              ),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '${route.name}: ${(route.aiScore * 100).toStringAsFixed(1)}% score',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ],
+
+                SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        setState(() {
+                          _useAIOptimization = !_useAIOptimization;
+                        });
+                        _generateRoutePointsWithAI();
+                      },
+                      child: Text(
+                        _useAIOptimization ? 'Disable AI' : 'Enable AI',
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF4CAF50),
+                        foregroundColor: Colors.white,
+                      ),
+                      child: Text('Got it!'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Widget _buildAnalysisItem(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: Color(0xFF626F47)),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+        ],
+      ),
+    );
   }
 
   // Parse koordinat DMS ke LatLng
@@ -257,7 +633,7 @@ class _MapsTrackingPageState extends State<MapsTrackingPage> {
     double endLat = (end.latitude * 1000).round() / 1000;
     double endLng = (end.longitude * 1000).round() / 1000;
 
-    return '${startLat}_${startLng}_${endLat}_${endLng}';
+    return '${startLat}_${startLng}_${endLat}_$endLng';
   }
 
   // Check apakah masih dalam cooldown period
@@ -496,16 +872,9 @@ class _MapsTrackingPageState extends State<MapsTrackingPage> {
     return interpolatedPoints;
   }
 
-  // Static method untuk clear cache jika diperlukan
-  static void clearRouteCache() {
-    _routeCache.clear();
-    _distanceCache.clear();
-    print('🗑️  Route cache cleared');
-  }
-
   // Static method untuk get cache info
   static String getCacheInfo() {
-    return 'Cache: ${_routeCache.length} routes, Last API call: ${_lastApiCall}';
+    return 'Cache: ${_routeCache.length} routes, Last API call: $_lastApiCall';
   }
 
   // Enhanced fallback waypoint generation dengan estimasi distance yang lebih baik
@@ -550,67 +919,6 @@ class _MapsTrackingPageState extends State<MapsTrackingPage> {
       '📍 Generated ${waypoints.length} fallback waypoints (${(_totalDistance / 1000).toStringAsFixed(1)} km)',
     );
     return waypoints;
-  }
-
-  // Generate route points dengan advanced API dan caching
-  Future<void> _generateRoutePointsWithAdvancedAPI() async {
-    if (_sourceLocation != null && _destinationLocation != null) {
-      print('🗺️  Generating route: ${getCacheInfo()}');
-
-      _routePoints = await _getAdvancedRouting(
-        _sourceLocation!,
-        _destinationLocation!,
-      );
-
-      print(
-        '✅ Route generated: ${_routePoints.length} points, ${(_totalDistance / 1000).toStringAsFixed(1)} km',
-      );
-
-      // Update logic untuk semua progress states
-      switch (_progress.toLowerCase()) {
-        case 'dikirim':
-          double progressPercentage = _calculateProgressPercentage();
-          int completedIndex =
-              (_routePoints.length * progressPercentage).floor();
-
-          _completedRoutePoints = _routePoints.sublist(0, completedIndex + 1);
-          _remainingRoutePoints = _routePoints.sublist(completedIndex);
-
-          if (completedIndex < _routePoints.length) {
-            _truckLocation = _routePoints[completedIndex];
-            _completedDistance = _totalDistance * progressPercentage;
-          }
-          break;
-
-        case 'selesai':
-          _completedRoutePoints = _routePoints;
-          _remainingRoutePoints = [];
-          _truckLocation = null;
-          _completedDistance = _totalDistance;
-          break;
-
-        case 'gagal':
-          // Untuk status gagal, tampilkan route sebagian dengan marker error
-          double failedProgressPercentage = 0.7; // Assume failed at 70%
-          int failedIndex =
-              (_routePoints.length * failedProgressPercentage).floor();
-
-          _completedRoutePoints = _routePoints.sublist(0, failedIndex + 1);
-          _remainingRoutePoints = _routePoints.sublist(failedIndex);
-          _truckLocation =
-              _routePoints[failedIndex]; // Show truck at failed position
-          _completedDistance = _totalDistance * failedProgressPercentage;
-          break;
-
-        default:
-          // Untuk 'menunggu persetujuan', 'disetujui', 'menunggu dikirim'
-          _completedRoutePoints = [];
-          _remainingRoutePoints = _routePoints;
-          _truckLocation = null;
-          _completedDistance = 0.0;
-          break;
-      }
-    }
   }
 
   double _calculateProgressPercentage() {
@@ -1025,11 +1333,7 @@ class _MapsTrackingPageState extends State<MapsTrackingPage> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        // Kembali ke halaman distribusi dan reload data
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const DistribusiPageIH()),
-        );
+        _navigateBack();
         return false; // Prevent default pop behavior
       },
       child: Scaffold(
@@ -1074,15 +1378,7 @@ class _MapsTrackingPageState extends State<MapsTrackingPage> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                // Kembali ke halaman distribusi dan reload data
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DistribusiPageIH(),
-                  ),
-                );
-              },
+              onPressed: _navigateBack,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF8F8962),
                 foregroundColor: Colors.white,
@@ -1129,15 +1425,7 @@ class _MapsTrackingPageState extends State<MapsTrackingPage> {
         child: Row(
           children: [
             GestureDetector(
-              onTap: () {
-                // Kembali ke halaman distribusi dan reload data
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DistribusiPageIH(),
-                  ),
-                );
-              },
+              onTap: _navigateBack,
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -1440,6 +1728,7 @@ class _MapsTrackingPageState extends State<MapsTrackingPage> {
     );
   }
 
+  // ===== UPDATE: _buildFloatingTimeline dengan AI Status =====
   Widget _buildFloatingTimeline() {
     return Positioned(
       bottom: 0,
@@ -1473,6 +1762,64 @@ class _MapsTrackingPageState extends State<MapsTrackingPage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+
+            // ===== TAMBAHAN: AI STATUS SECTION =====
+            if (_aiStatus.isNotEmpty) ...[
+              SizedBox(height: 8),
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black26,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.psychology,
+                      color:
+                          _useAIOptimization ? Colors.lightGreen : Colors.grey,
+                      size: 16,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _aiStatus,
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    ),
+                    // Toggle AI button
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _useAIOptimization = !_useAIOptimization;
+                        });
+                        if (_useAIOptimization) {
+                          _generateRoutePointsWithAI();
+                        } else {
+                          _generateRoutePointsWithTraditionalAPI();
+                        }
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color:
+                              _useAIOptimization ? Colors.green : Colors.grey,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          _useAIOptimization ? 'AI ON' : 'AI OFF',
+                          style: TextStyle(color: Colors.white, fontSize: 10),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             const SizedBox(height: 16),
             // Progress bar
             _buildProgressBar(),

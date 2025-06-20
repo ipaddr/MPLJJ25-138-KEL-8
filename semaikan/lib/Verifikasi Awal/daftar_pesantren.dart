@@ -48,13 +48,13 @@ class _DaftarPesantrenScreenState extends State<DaftarPesantrenScreen> {
             '', // Kosong untuk sementara, bisa diisi default atau diupdate nanti
         'date_registry': _getCurrentDateTimeWIB(),
         // Menambahkan data lengkap dari form registrasi sekolah/pesantren
-        'nama_sekolah': _namaSekolahController.text.trim(),
+        'nama_lengkap': _namaSekolahController.text.trim(),
         'npsn': _npsnController.text.trim(),
         'alamat_sekolah': _alamatSekolahController.text.trim(),
       });
     } catch (e) {
       print('Error saving school data to Firestore: $e');
-      throw e; // Re-throw error untuk ditangani di fungsi pemanggil
+      rethrow; // Re-throw error untuk ditangani di fungsi pemanggil
     }
   }
 

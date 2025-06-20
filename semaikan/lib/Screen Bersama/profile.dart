@@ -4,13 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import '../Screen 2 User/home_general.dart';
-import 'package:semaikan/Screen%20Bersama/maps.dart';
 import '../Verifikasi Awal/daftar_pengguna.dart';
-import '../Screen 2 User/distribusi.dart';
-import '../Screen 2 User/laporan.dart';
-import '../Screen 2 User/pengajuan.dart';
-import '../widgets/floating_bottom_navbar.dart';
-import '../widgets/petugas_navbar.dart';
 
 class ProfilePage extends StatefulWidget {
   final String? accountCategory; // ✅ Parameter untuk account category dari home
@@ -32,7 +26,6 @@ class _ProfilePageState extends State<ProfilePage> {
   String _profilePicture = "";
   bool _isLoading = true;
   bool _isUpdatingPicture = false;
-  int _currentIndex = -1; // Profile page tidak ada di bottom nav, jadi set -1
 
   @override
   void initState() {
@@ -226,81 +219,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // ✅ Handle bottom navigation - Updated untuk berbagai jenis navbar
-  void _handleBottomNavigation(int index) {
-    if (_currentIndex == index) {
-      return; // Hindari navigasi ke halaman yang sama
-    }
-
-    setState(() {
-      _currentIndex = index;
-    });
-
-    // ✅ Navigasi berdasarkan account category dan index
-    if (_accountCategory == 'petugas_distribusi') {
-      // Navigasi untuk petugas distribusi (4 tombol: Home, Distribusi, Maps, Laporan)
-      switch (index) {
-        case 0:
-          // Kembali ke HomePage petugas
-          Navigator.pop(context);
-          break;
-        case 1:
-          // Distribusi Page Petugas
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const DistribusiPageIH()),
-          );
-          break;
-        case 2:
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MapsPage()),
-          );
-          break;
-        case 3:
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const LaporanPageIH()),
-          );
-          break;
-      }
-    } else {
-      // Navigasi untuk user biasa (5 tombol dengan floating center)
-      switch (index) {
-        case 0:
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeGeneral()),
-          );
-          break;
-        case 1:
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const DistribusiPageIH()),
-          );
-          break;
-        case 2:
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => DaftarPengajuanPage()),
-          );
-          break;
-        case 3:
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MapsPage()),
-          );
-          break;
-        case 4:
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const LaporanPageIH()),
-          );
-          break;
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -432,17 +350,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     ), // Extra space untuk floating navbar
                   ],
                 ),
-              ),
-      // ✅ Navbar berdasarkan account category
-      bottomNavigationBar:
-          _accountCategory == 'petugas_distribusi'
-              ? PetugasNavbar(
-                currentIndex: _currentIndex,
-                onTap: _handleBottomNavigation,
-              )
-              : FloatingBottomNavBar(
-                currentIndex: _currentIndex,
-                onTap: _handleBottomNavigation,
               ),
     );
   }

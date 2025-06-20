@@ -60,7 +60,7 @@ class _DaftarHamilBalitaScreenState extends State<DaftarHamilBalitaScreen> {
       });
     } catch (e) {
       print('Error saving user data to Firestore: $e');
-      throw e; // Re-throw error untuk ditangani di fungsi pemanggil
+      rethrow; // Re-throw error untuk ditangani di fungsi pemanggil
     }
   }
 

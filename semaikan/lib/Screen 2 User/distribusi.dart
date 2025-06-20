@@ -5,7 +5,7 @@ import 'package:semaikan/Screen%20Bersama/maps.dart';
 import 'home_general.dart';
 import 'laporan.dart';
 import 'pengajuan.dart';
-import 'package:semaikan/Screen%20Bersama/maps_tracking.dart'; // Import file tracking baru
+import 'package:semaikan/Screen%20Bersama/maps_tracking.dart';
 import '../widgets/floating_bottom_navbar.dart';
 
 class DistribusiPageIH extends StatefulWidget {
@@ -100,7 +100,7 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
     }
   }
 
-  // Mengambil data pengajuan dari Firestore (1 minggu terakhir)
+  // Mengambil data pengajuan dari Firestore (1 minggu terakhir dan bukan Selesai/Gagal)
   Future<void> _loadPengajuanData() async {
     try {
       final User? user = _auth.currentUser;
@@ -113,11 +113,11 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
                 .orderBy('waktu_progress.waktu_pengajuan', descending: true)
                 .get();
 
-        // Filter data hanya 1 minggu terakhir (kurang dari 8 hari)
+        // Filter data hanya 1 minggu terakhir (kurang dari 8 hari) dan bukan status Selesai/Gagal
         DateTime now = DateTime.now();
         DateTime oneWeekAgo = now.subtract(const Duration(days: 7));
 
-        print('=== DEBUG FILTER TANGGAL ===');
+        print('=== DEBUG FILTER TANGGAL & STATUS ===');
         print('Current time: $now');
         print('One week ago: $oneWeekAgo');
 
@@ -126,6 +126,13 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
         for (var doc in pengajuanSnapshot.docs) {
           Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
           data['document_id'] = doc.id;
+
+          // Cek progress terlebih dahulu - skip jika Selesai atau Gagal
+          String progress = data['progress']?.toString().toLowerCase() ?? '';
+          if (progress == 'selesai' || progress == 'gagal') {
+            print('❌ Skipped document ${doc.id} (status: $progress)');
+            continue; // Skip dokumen dengan status Selesai atau Gagal
+          }
 
           // Cek tanggal pengajuan
           if (data['waktu_progress'] is Map &&
@@ -145,14 +152,20 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
                 pengajuanDate = DateTime.now();
               }
 
-              print('Document ${doc.id}: ${pengajuanDate.toString()}');
+              print(
+                'Document ${doc.id}: ${pengajuanDate.toString()} (status: $progress)',
+              );
 
               // Hanya tambahkan jika dalam 1 minggu terakhir
               if (pengajuanDate.isAfter(oneWeekAgo)) {
                 filteredData.add(data);
-                print('✅ Added document ${doc.id} (within 1 week)');
+                print(
+                  '✅ Added document ${doc.id} (within 1 week, status: $progress)',
+                );
               } else {
-                print('❌ Skipped document ${doc.id} (older than 1 week)');
+                print(
+                  '❌ Skipped document ${doc.id} (older than 1 week, status: $progress)',
+                );
               }
             } catch (e) {
               print('Error parsing date for document ${doc.id}: $e');
@@ -168,7 +181,9 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
         }
 
         print('Total documents processed: ${pengajuanSnapshot.docs.length}');
-        print('Documents within 1 week: ${filteredData.length}');
+        print(
+          'Documents within 1 week and not Selesai/Gagal: ${filteredData.length}',
+        );
         print('=== END DEBUG ===');
 
         setState(() {
@@ -256,21 +271,8 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
 
     String progressLower = progress.toLowerCase();
 
-    // Untuk Dikirim dan Selesai, selalu bisa tracking
-    if (progressLower == 'dikirim' || progressLower == 'selesai') {
-      return true;
-    }
-
-    // Untuk Gagal, cek apakah sempat dikirim
-    if (progressLower == 'gagal') {
-      if (waktuProgress != null && waktuProgress['dikirim'] != null) {
-        return true; // Gagal setelah sempat dikirim
-      }
-      return false; // Gagal sebelum dikirim
-    }
-
-    // Progress lainnya tidak bisa tracking
-    return false;
+    // Hanya untuk status "Dikirim" saja (karena Selesai dan Gagal sudah difilter)
+    return progressLower == 'dikirim';
   }
 
   // Handle bottom navigation
@@ -453,7 +455,7 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
           ),
           const SizedBox(height: 20),
           const Text(
-            'Proses Distribusi (1 Minggu Terakhir)',
+            'Proses Distribusi (Aktif)',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -484,7 +486,7 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Belum ada pengajuan dalam 1 minggu terakhir',
+            'Tidak ada pengajuan yang sedang aktif',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -494,7 +496,7 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Pengajuan distribusi dari 7 hari terakhir akan muncul di sini',
+            'Pengajuan yang sedang dalam proses distribusi akan muncul di sini',
             style: TextStyle(
               fontSize: 14,
               color: Color(0xFF626F47).withOpacity(0.5),
@@ -724,7 +726,7 @@ class _DistribusiPageIHState extends State<DistribusiPageIH> {
                 ),
               ),
 
-              // Tombol Cek Lokasi
+              // Tombol Cek Lokasi (hanya untuk status "Dikirim")
               if (canTrack) ...[
                 const SizedBox(width: 12),
                 GestureDetector(

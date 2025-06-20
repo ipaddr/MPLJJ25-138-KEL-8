@@ -7,6 +7,7 @@ import 'package:semaikan/Screen%20Bersama/profile.dart';
 import 'package:semaikan/Screen%20Khusus%20Petugas/distribusi.dart';
 import 'diagram_petugas.dart';
 import 'notifikasi.dart';
+import 'buat_pengumuman.dart'; // Import halaman buat pengumuman
 import 'package:semaikan/widgets/floating_bottom_navbar.dart';
 import 'package:semaikan/widgets/petugas_navbar.dart';
 import 'dart:convert';
@@ -34,6 +35,9 @@ class _HomePageState extends State<HomePage> {
   int _totalTertunda = 0;
   int _totalGagal = 0;
 
+  // Data untuk notifikasi
+  List<Map<String, dynamic>> _recentNotifications = [];
+
   bool _isLoading = true;
 
   @override
@@ -47,6 +51,7 @@ class _HomePageState extends State<HomePage> {
       _getUserName(),
       _loadDistributionData(),
       _loadStatusData(),
+      _loadRecentNotifications(),
     ]);
     setState(() {
       _isLoading = false;
@@ -105,10 +110,21 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadStatusData() async {
     try {
-      // Load status data dari Data_Pengajuan
-      final querySnapshot = await _firestore.collection('Data_Pengajuan').get();
+      // Load status berhasil dari System_Data
+      final systemDoc =
+          await _firestore
+              .collection('System_Data')
+              .doc('status_distribusi')
+              .get();
 
       int berhasil = 0;
+      if (systemDoc.exists && systemDoc.data() != null) {
+        berhasil = systemDoc.data()!['total_penerima'] ?? 0;
+      }
+
+      // Load status tertunda dan gagal dari Data_Pengajuan
+      final querySnapshot = await _firestore.collection('Data_Pengajuan').get();
+
       int tertunda = 0;
       int gagal = 0;
 
@@ -116,11 +132,7 @@ class _HomePageState extends State<HomePage> {
         final data = doc.data();
         final progress = data['progress'] ?? '';
 
-        if (progress == ' selesai  ') {
-          // ✅ Mengambil yang progress "selesai" dengan spasi
-          berhasil++;
-        } else if (progress == 'Menunggu Persetujuan' ||
-            progress == 'Dikirim') {
+        if (progress == 'Menunggu Persetujuan' || progress == 'Dikirim') {
           tertunda++;
         } else if (progress == 'Gagal') {
           gagal++;
@@ -134,6 +146,136 @@ class _HomePageState extends State<HomePage> {
       });
     } catch (e) {
       print('Error loading status data: $e');
+    }
+  }
+
+  Future<void> _loadRecentNotifications() async {
+    try {
+      final querySnapshot = await _firestore.collection('Data_Pengajuan').get();
+
+      List<Map<String, dynamic>> notifications = [];
+
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data();
+        final progress = data['progress'] ?? '';
+
+        if (progress == 'Menunggu Persetujuan') {
+          final namaLengkap = data['nama_lengkap'] ?? 'Tidak diketahui';
+          final waktuProgress = data['waktu_progress'] as Map<String, dynamic>?;
+          final waktuPengajuan = waktuProgress?['waktu_pengajuan'] ?? '';
+
+          if (waktuPengajuan.isNotEmpty) {
+            final notificationDate = _parseWaktuPengajuan(waktuPengajuan);
+
+            if (notificationDate != null) {
+              notifications.add({
+                'id': doc.id,
+                'nama_lengkap': namaLengkap,
+                'waktu_pengajuan': waktuPengajuan,
+                'formatted_date': _formatTanggal(waktuPengajuan),
+                'notification_date': notificationDate,
+                'title': 'Pengajuan Distribusi Perlu Kon...',
+                'subtitle':
+                    'Laporan pengajuan pada tanggal ${_formatTanggal(waktuPengajuan)}...',
+              });
+            }
+          }
+        }
+      }
+
+      // Urutkan berdasarkan waktu terbaru dan ambil 3 teratas
+      notifications.sort((a, b) {
+        final dateA = a['notification_date'] as DateTime;
+        final dateB = b['notification_date'] as DateTime;
+        return dateB.compareTo(dateA);
+      });
+
+      setState(() {
+        _recentNotifications = notifications.take(3).toList();
+      });
+    } catch (e) {
+      print('Error loading recent notifications: $e');
+    }
+  }
+
+  DateTime? _parseWaktuPengajuan(String waktuPengajuan) {
+    try {
+      // Format: "13/06/2025 20:45 WIB"
+      final parts = waktuPengajuan.split(' ');
+      if (parts.length >= 2) {
+        final datePart = parts[0]; // "13/06/2025"
+        final timePart = parts[1]; // "20:45"
+
+        final dateComponents = datePart.split('/');
+        final timeComponents = timePart.split(':');
+
+        if (dateComponents.length == 3 && timeComponents.length == 2) {
+          final day = int.parse(dateComponents[0]);
+          final month = int.parse(dateComponents[1]);
+          final year = int.parse(dateComponents[2]);
+          final hour = int.parse(timeComponents[0]);
+          final minute = int.parse(timeComponents[1]);
+
+          return DateTime(year, month, day, hour, minute);
+        }
+      }
+    } catch (e) {
+      print('Error parsing waktu pengajuan: $e');
+    }
+    return null;
+  }
+
+  String _formatTanggal(String waktuPengajuan) {
+    try {
+      final dateTime = _parseWaktuPengajuan(waktuPengajuan);
+      if (dateTime != null) {
+        final months = [
+          '',
+          'Januari',
+          'Februari',
+          'Maret',
+          'April',
+          'Mei',
+          'Juni',
+          'Juli',
+          'Agustus',
+          'September',
+          'Oktober',
+          'November',
+          'Desember',
+        ];
+
+        return '${dateTime.day} ${months[dateTime.month]} ${dateTime.year}';
+      }
+    } catch (e) {
+      print('Error formatting tanggal: $e');
+    }
+    return waktuPengajuan;
+  }
+
+  void _handleNavigation(int index) {
+    // Jangan navigate jika sedang loading
+    if (_isLoading) return;
+
+    setState(() {
+      _currentIndex = index;
+    });
+
+    if (index == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const DistribusiPage()),
+      );
+    } else if (index == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const MapsPage()),
+      );
+    } else if (index == 3) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const LaporanPage()),
+      );
     }
   }
 
@@ -156,6 +298,13 @@ class _HomePageState extends State<HomePage> {
 
                         const SizedBox(height: 20),
 
+                        // Tombol Buat Pengumuman (hanya untuk petugas)
+                        if (_accountCategory == 'petugas_distribusi')
+                          _buildBuatPengumumanButton(),
+
+                        if (_accountCategory == 'petugas_distribusi')
+                          const SizedBox(height: 20),
+
                         // Grafik Distribusi
                         DiagramPetugas(distributionData: _distributionData),
 
@@ -173,67 +322,18 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
       ),
+      // ✅ Navbar tetap ditampilkan bahkan saat loading
       bottomNavigationBar:
-          _isLoading
-              ? null // ✅ Tidak tampilkan navbar saat loading
-              : _accountCategory == 'petugas_distribusi'
+          _accountCategory == 'petugas_distribusi'
               ? PetugasNavbar(
                 currentIndex: _currentIndex,
-                onTap: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-
-                  if (index == 1) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const DistribusiPage(),
-                      ),
-                    );
-                  } else if (index == 2) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const MapsPage()),
-                    );
-                  } else if (index == 3) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LaporanPage(),
-                      ),
-                    );
-                  }
-                },
+                onTap:
+                    _handleNavigation, // Gunakan fungsi terpisah untuk handle navigation
               )
               : FloatingBottomNavBar(
                 currentIndex: _currentIndex,
-                onTap: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-
-                  if (index == 1) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const DistribusiPage(),
-                      ),
-                    );
-                  } else if (index == 2) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const MapsPage()),
-                    );
-                  } else if (index == 3) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LaporanPage(),
-                      ),
-                    );
-                  }
-                },
+                onTap:
+                    _handleNavigation, // Gunakan fungsi terpisah untuk handle navigation
               ),
     );
   }
@@ -265,7 +365,7 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Hai,',
+                  'Hai Petugas Distribusi,',
                   style: TextStyle(fontSize: 14, color: Color(0xFF626F47)),
                 ),
                 Text(
@@ -295,6 +395,80 @@ class _HomePageState extends State<HomePage> {
           child: _buildProfilePicture(),
         ),
       ],
+    );
+  }
+
+  Widget _buildBuatPengumumanButton() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF626F47), Color(0xFF8F8962)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const BuatPengumumanPage()),
+          );
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF9F3D1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.campaign,
+                color: Color(0xFF626F47),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Buat Pengumuman',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFF9F3D1),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Kirim pengumuman ke seluruh pengguna',
+                    style: TextStyle(fontSize: 14, color: Color(0xFFF9F3D1)),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Color(0xFFF9F3D1),
+              size: 20,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -510,7 +684,7 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Riwayat Pemberitahuan',
+                'Notifikasi',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -524,7 +698,10 @@ class _HomePageState extends State<HomePage> {
                     MaterialPageRoute(
                       builder: (context) => const NotifikasiPage(),
                     ),
-                  );
+                  ).then((_) {
+                    // Refresh notifications when returning
+                    _loadRecentNotifications();
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFD8D1A8),
@@ -549,17 +726,51 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildNotificationItem(),
-          const Divider(color: Color(0xFF8F8962), height: 1),
-          _buildNotificationItem(),
-          const Divider(color: Color(0xFF8F8962), height: 1),
-          _buildNotificationItem(),
+
+          // Display real notifications or empty state
+          if (_recentNotifications.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                'Tidak ada notifikasi terbaru',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF8F8962),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            )
+          else
+            ...List.generate(_recentNotifications.length, (index) {
+              final notification = _recentNotifications[index];
+              return Column(
+                children: [
+                  _buildNotificationItem(notification),
+                  if (index < _recentNotifications.length - 1)
+                    const Divider(color: Color(0xFF8F8962), height: 1),
+                ],
+              );
+            }),
         ],
       ),
     );
   }
 
-  Widget _buildNotificationItem() {
+  Widget _buildNotificationItem(Map<String, dynamic>? notification) {
+    if (notification == null) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 10),
+        child: Text(
+          'Data notifikasi tidak tersedia',
+          style: TextStyle(
+            fontSize: 12,
+            color: Color(0xFF8F8962),
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
@@ -578,21 +789,24 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Pengajuan Distribusi Perlu Kon...',
-                  style: TextStyle(
+                  notification['title'] ?? 'Notifikasi',
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF626F47),
                   ),
                 ),
                 Text(
-                  'Laporan pengajuan pada tanggal 4 April...',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF626F47)),
+                  notification['subtitle'] ?? 'Tidak ada deskripsi',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF626F47),
+                  ),
                 ),
               ],
             ),

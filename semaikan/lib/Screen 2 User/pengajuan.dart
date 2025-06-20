@@ -41,8 +41,6 @@ class _DaftarPengajuanPageState extends State<DaftarPengajuanPage> {
   // Account category variable
   String _accountCategory = "";
 
-  // Map controllers
-  final MapController _mapController = MapController();
   final MapController _dialogMapController = MapController();
 
   @override
@@ -173,7 +171,7 @@ class _DaftarPengajuanPageState extends State<DaftarPengajuanPage> {
     double latSec = (latMinFloat - latMin) * 60;
     double lngSec = (lngMinFloat - lngMin) * 60;
 
-    return "${latDeg}°${latMin}'${latSec.toStringAsFixed(1)}\"$latDirection ${lngDeg}°${lngMin}'${lngSec.toStringAsFixed(1)}\"$lngDirection";
+    return "$latDeg°$latMin'${latSec.toStringAsFixed(1)}\"$latDirection $lngDeg°$lngMin'${lngSec.toStringAsFixed(1)}\"$lngDirection";
   }
 
   // Format timestamp untuk waktu_progress
@@ -226,6 +224,21 @@ class _DaftarPengajuanPageState extends State<DaftarPengajuanPage> {
         throw Exception('User not logged in');
       }
 
+      // Get user's nama_lengkap from Account_Storage
+      String namaPemohon = '';
+      try {
+        DocumentSnapshot userDoc =
+            await _firestore.collection('Account_Storage').doc(user.uid).get();
+
+        if (userDoc.exists) {
+          Map<String, dynamic> userData =
+              userDoc.data() as Map<String, dynamic>;
+          namaPemohon = userData['nama_lengkap'] ?? '';
+        }
+      } catch (e) {
+        print('Error getting nama_lengkap: $e');
+      }
+
       // Create timestamp untuk waktu pengajuan
       DateTime now = DateTime.now();
       String waktuPengajuan = _formatTimestamp(now);
@@ -242,7 +255,8 @@ class _DaftarPengajuanPageState extends State<DaftarPengajuanPage> {
           'koordinat': _coordinatesToDMS(_confirmedLocation!),
           'address': _alamatController.text.trim(),
         },
-        'Kategori': _getKategoriFromAccountCategory(_accountCategory),
+        'kategori': _getKategoriFromAccountCategory(_accountCategory),
+        'nama_pemohon': namaPemohon, // New field as requested
         'email_pemohon': user.email,
         'progress': 'Menunggu Persetujuan',
         'user_id': user.uid,
@@ -253,7 +267,13 @@ class _DaftarPengajuanPageState extends State<DaftarPengajuanPage> {
           .collection('Data_Pengajuan')
           .add(pengajuanData);
 
-      // Save to user's subcollection
+      // Add document ID to the data
+      pengajuanData['id_pengajuan'] = mainDoc.id;
+
+      // Update the document with the ID
+      await mainDoc.update({'id_pengajuan': mainDoc.id});
+
+      // Save to user's subcollection with updated data including ID
       await _firestore
           .collection('Account_Storage')
           .doc(user.uid)
@@ -781,7 +801,7 @@ class _DaftarPengajuanPageState extends State<DaftarPengajuanPage> {
   }
 
   Widget _buildSubmitButton() {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 50,
       child: ElevatedButton(

@@ -74,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
       });
     } catch (e) {
       print('Error saving petugas distribusi data to Firestore: $e');
-      throw e; // Re-throw error untuk ditangani di fungsi pemanggil
+      rethrow; // Re-throw error untuk ditangani di fungsi pemanggil
     }
   }
 
